@@ -1,4 +1,6 @@
-# Bevy GitHub CI Template
+# Cycle of the Falen
+
+A bevy game jam 5 creation
 
 This repo show how to set up CI on a GitHub project for Bevy.
 
@@ -101,3 +103,5 @@ The Ducky sprite is CC-0 licensed by [Caz Creates Games](https://caz-creates-gam
 Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
 triple licensed as above, without any additional terms or conditions.
+
+

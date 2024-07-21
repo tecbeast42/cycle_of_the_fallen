@@ -6,6 +6,8 @@
 
 mod player;
 mod walls;
+mod game;
+mod levels;
 
 use avian2d::prelude::*;
 use bevy::asset::AssetMetaCheck;
@@ -31,6 +33,7 @@ fn main() {
         ))
         .add_plugins(PlayerPlugin)
         .add_plugins(WallPlugin)
+        .add_plugins(levels::LevelsPlugin)
         .add_systems(Startup, setup)
         .run();
 }

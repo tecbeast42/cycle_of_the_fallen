@@ -2,7 +2,7 @@ use bevy::{color::palettes::tailwind, prelude::*};
 
 use crate::game::{CurrentLevel, GameState};
 
-use super::prelude::CharacterSelectionButton;
+use super::prelude::{CharacterSelectionButton, SelectedCharacter};
 
 pub fn spawn_character_selection(
     mut commands: Commands,
@@ -84,12 +84,13 @@ pub fn interaction_on_character_selection_buttons(
         Changed<Interaction>,
     >,
     mut game_state: ResMut<NextState<GameState>>,
+    mut selected_character: ResMut<SelectedCharacter>,
 ) {
-    for (interaction, mut background_color, _character_selection_button) in query.iter_mut() {
+    for (interaction, mut background_color, character_selection_button) in query.iter_mut() {
         *background_color = match *interaction {
             Interaction::Pressed => {
                 game_state.set(GameState::Play);
-                // TODO now do something with the char choosen
+                selected_character.set(character_selection_button.0.clone());
                 tailwind::LIME_300.into()
             }
             Interaction::Hovered => tailwind::LIME_500.into(),

@@ -1,3 +1,5 @@
+use crate::character::prelude::SelectedCharacter;
+
 use super::prelude::*;
 use avian2d::prelude::*;
 use bevy::{prelude::*, window::PrimaryWindow};
@@ -9,11 +11,12 @@ pub fn spawn_player(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    selected_character: Res<SelectedCharacter>,
 ) {
     commands
         .spawn((
             Player,
-            PlayerStats::new(Class::Ranger),
+            PlayerStats::new(selected_character.0.clone()),
             ColorMesh2dBundle {
                 mesh: meshes.add(Circle::new(PLAYER_RADIUS)).into(),
                 material: materials.add(Color::linear_rgb(0.2, 0.5, 0.2)),

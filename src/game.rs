@@ -47,7 +47,7 @@ impl Default for Levels {
                 id: 1,
                 unlocked: true,
                 cycles: None,
-                characters: vec![Class::Knight],
+                characters: vec![Class::Knight, Class::Ranger, Class::Wizard], // Temporarly all classes for test purposes
             },
             Level {
                 id: 2,

@@ -108,25 +108,33 @@ pub fn attack(
     mouse: Res<ButtonInput<MouseButton>>,
 ) {
     if let Ok((transform, stats)) = player.get_single() {
+        let attack = &stats.attack;
+
         if mouse.just_pressed(MouseButton::Left) {
-            let projectile_width = stats.attack.size.x;
-            let projectile_height = stats.attack.size.y;
+            // Projectile size
+            let width = attack.size.x;
+            let height = attack.size.y;
+
+            // Projectile transform
+            let position =
+                transform.translation + transform.rotation * Vec3::X * (PLAYER_RADIUS + 10.0);
+            let rotation = transform.rotation;
+
+            // Projectile movement
+            let direction = position - transform.translation;
+            let speed = attack.speed;
+            let velocity = direction * speed;
 
             commands.spawn((
-                AttackProjectile,
+                AttackProjectile { velocity },
                 ColorMesh2dBundle {
-                    mesh: meshes
-                        .add(Rectangle::new(projectile_width, projectile_height))
-                        .into(),
+                    mesh: meshes.add(Rectangle::new(height, width)).into(),
                     material: materials.add(Color::linear_rgb(0.8, 0.6, 0.8)),
-                    transform: Transform::from_translation(
-                        transform.translation + Vec3::new(PLAYER_RADIUS + 2.0, 0.0, 0.0),
-                    )
-                    .with_rotation(transform.rotation),
+                    transform: Transform::from_translation(position).with_rotation(rotation),
                     ..default()
                 },
                 RigidBody::Dynamic,
-                Collider::rectangle(projectile_width, projectile_height),
+                Collider::rectangle(height, width),
             ));
         }
     }
@@ -135,4 +143,13 @@ pub fn attack(
 /// Move projectiles around.
 ///
 /// Projectiles move depending on their speed and range.
-pub fn move_projectiles(player: Query<(), With<AttackProjectile>>) {}
+pub fn move_projectiles(
+    mut query: Query<(&mut LinearVelocity, &AttackProjectile)>,
+    time: Res<Time>,
+) {
+    for (mut linear_velocity, projectile) in query.iter_mut() {
+        let velocity = projectile.velocity * time.delta_seconds();
+        linear_velocity.x = velocity.x;
+        linear_velocity.y = velocity.y;
+    }
+}

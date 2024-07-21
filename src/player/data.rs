@@ -89,14 +89,14 @@ impl Attack {
             Weapon::Bow => Self {
                 ranged: true,
                 size: Vec2::new(3.0, 8.0),
-                speed: 30.0,
+                speed: 600.0,
                 attack_range: 5.0,
                 attack_speed: 30.0,
             },
             Weapon::Staff => Self {
                 ranged: true,
-                size: Vec2::new(12.0, 12.0),
-                speed: 0.0,
+                size: Vec2::new(8.0, 8.0),
+                speed: 300.0,
                 attack_range: 5.0,
                 attack_speed: 30.0,
             },
@@ -104,8 +104,10 @@ impl Attack {
     }
 }
 
-/// Marker component of the weapon projectiles/attacks.
+/// Component of the weapon projectiles/attacks.
 ///
-/// This component allow to identify the attacks during Bevy queries.
+/// This component allow to identify the attacks during Bevy queries and store its velocity.
 #[derive(Component, Debug)]
-pub struct AttackProjectile;
+pub struct AttackProjectile {
+    pub velocity: Vec3,
+}

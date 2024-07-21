@@ -108,26 +108,34 @@ pub fn attack(
     mouse: Res<ButtonInput<MouseButton>>,
 ) {
     if let Ok((transform, stats)) = player.get_single() {
+        let attack = &stats.attack;
+
         if mouse.just_pressed(MouseButton::Left) {
-            let projectile_width = stats.attack.size.x;
-            let projectile_height = stats.attack.size.y;
+            // Projectile size
+            let width = attack.size.x;
+            let height = attack.size.y;
+
+            // Projectile transform
+            let position =
+                transform.translation + transform.rotation * Vec3::X * (PLAYER_RADIUS + 10.0);
+            let rotation = transform.rotation;
+
+            // Projectile movement
+            let direction = position - transform.translation;
+            let speed = attack.speed;
+            let velocity = direction * speed;
 
             commands.spawn((
                 AttackProjectile,
                 ColorMesh2dBundle {
-                    mesh: meshes
-                        .add(Rectangle::new(projectile_width, projectile_height))
-                        .into(),
+                    mesh: meshes.add(Rectangle::new(height, width)).into(),
                     material: materials.add(Color::linear_rgb(0.8, 0.6, 0.8)),
-                    transform: Transform::from_translation(
-                        transform.translation + Vec3::new(PLAYER_RADIUS + 2.0, 0.0, 0.0),
-                    )
-                    .with_rotation(transform.rotation),
+                    transform: Transform::from_translation(position).with_rotation(rotation),
                     ..default()
                 },
-                LinearVelocity::from(Vec2::new(350.0, 0.0)),
-                RigidBody::Kinematic,
-                Collider::rectangle(projectile_width, projectile_height),
+                RigidBody::Dynamic,
+                LinearVelocity(velocity.truncate()),
+                Collider::rectangle(height, width),
             ));
         }
     }

@@ -96,8 +96,8 @@ impl Attack {
             },
             Weapon::Staff => Self {
                 ranged: true,
-                size: Vec2::new(12.0, 12.0),
-                speed: 0.0,
+                size: Vec2::new(8.0, 8.0),
+                speed: 15.0,
                 attack_range: 5.0,
                 attack_speed: 30.0,
             },

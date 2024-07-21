@@ -125,14 +125,10 @@ pub fn attack(
                     .with_rotation(transform.rotation),
                     ..default()
                 },
-                RigidBody::Dynamic,
+                LinearVelocity::from(Vec2::new(350.0, 0.0)),
+                RigidBody::Kinematic,
                 Collider::rectangle(projectile_width, projectile_height),
             ));
         }
     }
 }
-
-/// Move projectiles around.
-///
-/// Projectiles move depending on their speed and range.
-pub fn move_projectiles(player: Query<(), With<AttackProjectile>>) {}

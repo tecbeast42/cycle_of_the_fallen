@@ -1,18 +1,18 @@
 use bevy::{color::palettes::tailwind, prelude::*};
 
-use crate::game::{CurrentLevel, GameState, Levels};
+use crate::game::{CurrentLevel, GameState};
 
-use super::prelude::LevelSelectionButton;
+use super::prelude::CharacterSelectionButton;
 
-pub fn spawn_level_selection(
+pub fn spawn_character_selection(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    levels: Res<Levels>,
+    current_level: Res<CurrentLevel>,
 ) {
-    info!("Spawn LevelSelection");
+    info!("Spawn CharacterSelection");
     commands
         .spawn((
-            StateScoped(GameState::LevelSelection),
+            StateScoped(GameState::CharacterSelection),
             NodeBundle {
                 style: Style {
                     padding: UiRect::all(Val::Px(50.0)),
@@ -27,20 +27,24 @@ pub fn spawn_level_selection(
                     row_gap: Val::Px(20.0),
                     ..default()
                 },
-                background_color: tailwind::STONE_950.into(),
+                background_color: tailwind::PURPLE_900.into(),
                 ..default()
             },
         ))
         .with_children(|wrapper| {
             wrapper.spawn(TextBundle::from_section(
-                "Level Selection",
+                "Character Selection",
                 TextStyle {
                     font: asset_server.load("Kalam-Light.ttf"),
                     font_size: 80.0,
                     ..default()
                 },
             ));
-            for level in levels.iter() {
+            let characters =
+                current_level.0.clone().map(|l| l.characters).expect(
+                    "Expected a current level to be set in system spawn_character_selection",
+                );
+            for character in characters.iter() {
                 wrapper
                     .spawn((
                         ButtonBundle {
@@ -54,27 +58,13 @@ pub fn spawn_level_selection(
                             },
                             ..default()
                         },
-                        LevelSelectionButton::from(level),
+                        CharacterSelectionButton(character.clone()),
                     ))
                     .with_children(|selector| {
                         selector.spawn(TextBundle::from_section(
-                            level.id.to_string(),
+                            format!("{character:?}"),
                             TextStyle {
                                 font: asset_server.load("Kalam-Bold.ttf"),
-                                font_size: 32.0,
-                                ..default()
-                            },
-                        ));
-                        let score: String;
-                        if let Some(existing_score) = level.cycles {
-                            score = existing_score.to_string();
-                        } else {
-                            score = "∞".to_string();
-                        };
-                        selector.spawn(TextBundle::from_section(
-                            score,
-                            TextStyle {
-                                font: asset_server.load("Kalam-Regular.ttf"),
                                 font_size: 32.0,
                                 ..default()
                             },
@@ -84,25 +74,26 @@ pub fn spawn_level_selection(
         });
 }
 
-pub fn interaction_on_level_selection_buttons(
+pub fn interaction_on_character_selection_buttons(
     mut query: Query<
-        (&Interaction, &mut BackgroundColor, &LevelSelectionButton),
+        (
+            &Interaction,
+            &mut BackgroundColor,
+            &CharacterSelectionButton,
+        ),
         Changed<Interaction>,
     >,
     mut game_state: ResMut<NextState<GameState>>,
-    mut current_level: ResMut<CurrentLevel>,
-    levels: Res<Levels>,
 ) {
-    for (interaction, mut background_color, level_selection_button) in query.iter_mut() {
-        *background_color = match (*interaction, level_selection_button.unlocked) {
-            (Interaction::Pressed, true) => {
-                game_state.set(GameState::CharacterSelection);
-                current_level.0 = levels.id(level_selection_button.level);
+    for (interaction, mut background_color, _character_selection_button) in query.iter_mut() {
+        *background_color = match *interaction {
+            Interaction::Pressed => {
+                game_state.set(GameState::Play);
+                // TODO now do something with the char choosen
                 tailwind::LIME_300.into()
             }
-            (Interaction::Hovered, true) => tailwind::LIME_500.into(),
-            (Interaction::None, true) => tailwind::LIME_800.into(),
-            (_, false) => tailwind::STONE_700.into(),
+            Interaction::Hovered => tailwind::LIME_500.into(),
+            Interaction::None => tailwind::LIME_800.into(),
         }
     }
 }

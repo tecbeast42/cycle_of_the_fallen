@@ -4,12 +4,14 @@
 // Feel free to delete this line.
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
 
+mod ennemy;
 mod player;
 mod walls;
 
 use avian2d::prelude::*;
 use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
+use ennemy::prelude::*;
 use player::prelude::*;
 use walls::prelude::*;
 
@@ -30,6 +32,7 @@ fn main() {
             PhysicsPlugins::default().with_length_unit(PLAYER_RADIUS),
         ))
         .add_plugins(PlayerPlugin)
+        .add_plugins(EnnemyPlugin)
         .add_plugins(WallPlugin)
         .add_systems(Startup, setup)
         .run();

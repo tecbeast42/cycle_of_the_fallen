@@ -73,7 +73,7 @@ pub struct Attack {
     pub ranged: bool,
     pub size: Vec2,
     pub speed: f32,
-    pub attack_range: f32,
+    pub range: f32,
     pub attack_speed: f32,
 }
 
@@ -84,21 +84,21 @@ impl Attack {
                 ranged: false,
                 size: Vec2::new(12.0, 12.0),
                 speed: 0.0,
-                attack_range: 5.0,
+                range: 0.2,
                 attack_speed: 30.0,
             },
             Weapon::Bow => Self {
                 ranged: true,
                 size: Vec2::new(3.0, 8.0),
                 speed: 30.0,
-                attack_range: 5.0,
+                range: 0.5,
                 attack_speed: 30.0,
             },
             Weapon::Staff => Self {
                 ranged: true,
                 size: Vec2::new(8.0, 8.0),
                 speed: 15.0,
-                attack_range: 5.0,
+                range: 0.5,
                 attack_speed: 30.0,
             },
         }
@@ -109,4 +109,14 @@ impl Attack {
 ///
 /// This component allow to identify the attacks during Bevy queries.
 #[derive(Component, Debug)]
-pub struct AttackProjectile;
+pub struct AttackProjectile {
+    pub despawn_timer: Timer,
+}
+
+impl AttackProjectile {
+    pub fn with_timer(timer: Timer) -> Self {
+        AttackProjectile {
+            despawn_timer: timer,
+        }
+    }
+}

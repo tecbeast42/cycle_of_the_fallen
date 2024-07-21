@@ -129,7 +129,7 @@ pub fn attack(
             let velocity = direction * speed;
 
             commands.spawn((
-                AttackProjectile,
+                AttackProjectile::with_timer(Timer::from_seconds(attack.range, TimerMode::Once)),
                 ColorMesh2dBundle {
                     mesh: meshes.add(Rectangle::new(height, width)).into(),
                     material: materials.add(Color::linear_rgb(0.8, 0.6, 0.8)),
@@ -140,6 +140,20 @@ pub fn attack(
                 LinearVelocity(velocity.truncate()),
                 Collider::rectangle(height, width),
             ));
+        }
+    }
+}
+
+pub fn despawn_out_of_range_projectiles(
+    mut commands: Commands,
+    mut projectiles: Query<(Entity, &mut AttackProjectile)>,
+    time: Res<Time>,
+) {
+    for (entity, mut attack_projectile) in projectiles.iter_mut() {
+        attack_projectile.despawn_timer.tick(time.delta());
+
+        if attack_projectile.despawn_timer.finished() {
+            commands.entity(entity).despawn();
         }
     }
 }

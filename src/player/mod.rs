@@ -16,6 +16,15 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::Play), spawn_player)
-            .add_systems(Update, (move_player, rotate_player, attack).chain());
+            .add_systems(
+                Update,
+                (
+                    move_player,
+                    rotate_player,
+                    despawn_out_of_range_projectiles,
+                    attack,
+                )
+                    .chain(),
+            );
     }
 }

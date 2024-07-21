@@ -13,6 +13,7 @@ pub struct Player;
 /// - The knight have lot of health and does damage with melee attacks.
 /// - The ranger shoots from long range but with low damage.
 /// - The wizard inflicts hight damages at medium range but is very weak.
+#[derive(Clone, Debug)]
 pub enum Class {
     Knight,
     Ranger,

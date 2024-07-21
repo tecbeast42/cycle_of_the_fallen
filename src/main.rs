@@ -4,12 +4,16 @@
 // Feel free to delete this line.
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
 
+mod game;
+mod levels;
+mod character;
 mod player;
 mod walls;
 
 use avian2d::prelude::*;
 use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
+use character::CharactersPlugin;
 use player::prelude::*;
 use walls::prelude::*;
 
@@ -31,6 +35,9 @@ fn main() {
         ))
         .add_plugins(PlayerPlugin)
         .add_plugins(WallPlugin)
+        .add_plugins(levels::LevelsPlugin)
+        .add_plugins(game::GamePlugin)
+        .add_plugins(CharactersPlugin)
         .add_systems(Startup, setup)
         .run();
 }

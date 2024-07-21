@@ -126,7 +126,7 @@ pub fn attack(
             let velocity = direction * speed;
 
             commands.spawn((
-                AttackProjectile { velocity },
+                AttackProjectile,
                 ColorMesh2dBundle {
                     mesh: meshes.add(Rectangle::new(height, width)).into(),
                     material: materials.add(Color::linear_rgb(0.8, 0.6, 0.8)),
@@ -134,22 +134,9 @@ pub fn attack(
                     ..default()
                 },
                 RigidBody::Dynamic,
+                LinearVelocity(velocity.truncate()),
                 Collider::rectangle(height, width),
             ));
         }
-    }
-}
-
-/// Move projectiles around.
-///
-/// Projectiles move depending on their speed and range.
-pub fn move_projectiles(
-    mut query: Query<(&mut LinearVelocity, &AttackProjectile)>,
-    time: Res<Time>,
-) {
-    for (mut linear_velocity, projectile) in query.iter_mut() {
-        let velocity = projectile.velocity * time.delta_seconds();
-        linear_velocity.x = velocity.x;
-        linear_velocity.y = velocity.y;
     }
 }

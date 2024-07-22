@@ -187,10 +187,6 @@ pub fn player_attack_read(
             let width = attack.size.x;
             let height = attack.size.y;
 
-            // Projectile size
-            let width = attack.size.x;
-            let height = attack.size.y;
-
             // Projectile transform
             let position =
                 transform.translation + transform.rotation * Vec3::X * (PLAYER_RADIUS + 10.0);
@@ -200,10 +196,9 @@ pub fn player_attack_read(
             let direction = position - transform.translation;
             let speed = attack.speed;
             let velocity = direction * speed;
-            let range = attack.range;
 
             commands.spawn((
-                AttackProjectile::with_timer(Timer::from_seconds(range, TimerMode::Once)),
+                AttackProjectile::new(transform.translation.truncate(), attack.range),
                 ColorMesh2dBundle {
                     mesh: meshes.add(Rectangle::new(height, width)).into(),
                     material: materials.add(Color::linear_rgb(0.8, 0.6, 0.8)),
@@ -229,6 +224,17 @@ pub fn despawn_out_of_range_projectiles(
             .distance(attack_projectile.initial_position);
 
         if traveled_distance > attack_projectile.range {
+            commands.entity(entity).despawn();
+        }
+    }
+}
+
+pub fn despawn_collided_projectiles(
+    mut commands: Commands,
+    projectiles: Query<(Entity, &CollidingEntities), With<AttackProjectile>>,
+) {
+    for (entity, colliding_entities) in projectiles.iter() {
+        if colliding_entities.len() > 0 {
             commands.entity(entity).despawn();
         }
     }

@@ -2,6 +2,7 @@ mod data;
 mod events;
 mod systems;
 
+use avian2d::schedule::PostProcessCollisions;
 use bevy::prelude::*;
 use events::*;
 use systems::*;
@@ -41,6 +42,7 @@ impl Plugin for PlayerPlugin {
                     despawn_out_of_range_projectiles,
                 )
                     .chain(),
-            );
+            )
+            .add_systems(PostProcessCollisions, despawn_collided_projectiles);
     }
 }

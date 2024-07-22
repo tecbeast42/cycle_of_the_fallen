@@ -18,6 +18,7 @@ pub fn spawn_player(
         .spawn((
             Player,
             PlayerStats::new(selected_character.0.clone()),
+            LastAttack(None),
             ColorMesh2dBundle {
                 mesh: meshes.add(Circle::new(PLAYER_RADIUS)).into(),
                 material: materials.add(Color::linear_rgb(0.2, 0.5, 0.2)),
@@ -99,7 +100,7 @@ pub fn move_player_read(
 ///
 /// Move the mouse around the player to make him rotate.
 pub fn rotate_player_write(
-    mut player: Query<(Entity, &Transform), With<Player>>,
+    player: Query<(Entity, &Transform), With<Player>>,
     query_window: Query<&Window, With<PrimaryWindow>>,
     query_camera: Query<(&Camera, &GlobalTransform)>,
     mut events: EventWriter<PlayerRotateEvent>,
@@ -143,16 +144,30 @@ pub fn rotate_player_read(
 ///
 /// Use left mouse click to perform an attack with the player's weapon.
 pub fn player_attack_write(
-    player: Query<Entity, With<Player>>,
+    mut player: Query<(Entity, &PlayerStats, &mut LastAttack), With<Player>>,
     mouse: Res<ButtonInput<MouseButton>>,
+    time: Res<Time>,
     mut events: EventWriter<PlayerAttackEvent>,
 ) {
-    if let Ok(entity) = player.get_single() {
+    if let Ok((entity, stats, mut last_attack)) = player.get_single_mut() {
         if mouse.just_pressed(MouseButton::Left) {
+            if let Some(timer) = &mut last_attack.0 {
+                timer.tick(time.delta());
+            }
+            let first_shot = last_attack.0.is_none();
+            let delayed_enough = last_attack.0.clone().is_some_and(|timer| timer.finished());
+
+            if !first_shot && !delayed_enough {
+                return;
+            }
             events.send(PlayerAttackEvent {
                 entity,
                 source: EventSource::Input,
             });
+            last_attack.0 = Some(Timer::from_seconds(
+                stats.attack.attack_speed,
+                TimerMode::Once,
+            ));
         }
     }
 }
@@ -167,6 +182,10 @@ pub fn player_attack_read(
     for event in events.read() {
         if let Ok((transform, stats)) = player.get(event.entity) {
             let attack = &stats.attack;
+
+            // Projectile size
+            let width = attack.size.x;
+            let height = attack.size.y;
 
             // Projectile size
             let width = attack.size.x;
@@ -201,13 +220,15 @@ pub fn player_attack_read(
 
 pub fn despawn_out_of_range_projectiles(
     mut commands: Commands,
-    mut projectiles: Query<(Entity, &mut AttackProjectile)>,
-    time: Res<Time>,
+    mut projectiles: Query<(Entity, &Transform, &mut AttackProjectile)>,
 ) {
-    for (entity, mut attack_projectile) in projectiles.iter_mut() {
-        attack_projectile.despawn_timer.tick(time.delta());
+    for (entity, transform, attack_projectile) in projectiles.iter_mut() {
+        let traveled_distance = transform
+            .translation
+            .truncate()
+            .distance(attack_projectile.initial_position);
 
-        if attack_projectile.despawn_timer.finished() {
+        if traveled_distance > attack_projectile.range {
             commands.entity(entity).despawn();
         }
     }

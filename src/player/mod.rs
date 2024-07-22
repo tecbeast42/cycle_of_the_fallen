@@ -1,6 +1,7 @@
 mod data;
 mod systems;
 
+use avian2d::schedule::PostProcessCollisions;
 use bevy::prelude::*;
 use systems::*;
 
@@ -25,6 +26,7 @@ impl Plugin for PlayerPlugin {
                     attack,
                 )
                     .chain(),
-            );
+            )
+            .add_systems(PostProcessCollisions, despawn_collided_projectiles);
     }
 }

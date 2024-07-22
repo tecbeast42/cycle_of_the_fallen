@@ -17,6 +17,7 @@ pub fn spawn_player(
         .spawn((
             Player,
             PlayerStats::new(selected_character.0.clone()),
+            LastAttack(None),
             ColorMesh2dBundle {
                 mesh: meshes.add(Circle::new(PLAYER_RADIUS)).into(),
                 material: materials.add(Color::linear_rgb(0.2, 0.5, 0.2)),
@@ -107,52 +108,78 @@ pub fn attack(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    player: Query<(&Transform, &PlayerStats), With<Player>>,
+    mut player: Query<(&Transform, &PlayerStats, &mut LastAttack), With<Player>>,
     mouse: Res<ButtonInput<MouseButton>>,
+    time: Res<Time>,
 ) {
-    if let Ok((transform, stats)) = player.get_single() {
+    if let Ok((transform, stats, mut last_attack)) = player.get_single_mut() {
         let attack = &stats.attack;
 
-        if mouse.just_pressed(MouseButton::Left) {
-            // Projectile size
-            let width = attack.size.x;
-            let height = attack.size.y;
+        if mouse.pressed(MouseButton::Left) {
+            if let Some(timer) = &mut last_attack.0 {
+                timer.tick(time.delta());
+            }
 
-            // Projectile transform
-            let position =
-                transform.translation + transform.rotation * Vec3::X * (PLAYER_RADIUS + 10.0);
-            let rotation = transform.rotation;
+            let first_shot = last_attack.0.is_none();
 
-            // Projectile movement
-            let direction = position - transform.translation;
-            let speed = attack.speed;
-            let velocity = direction * speed;
+            let delayed_enough = last_attack.0.clone().is_some_and(|timer| timer.finished());
 
-            commands.spawn((
-                AttackProjectile::with_timer(Timer::from_seconds(attack.range, TimerMode::Once)),
-                ColorMesh2dBundle {
-                    mesh: meshes.add(Rectangle::new(height, width)).into(),
-                    material: materials.add(Color::linear_rgb(0.8, 0.6, 0.8)),
-                    transform: Transform::from_translation(position).with_rotation(rotation),
-                    ..default()
-                },
-                RigidBody::Dynamic,
-                LinearVelocity(velocity.truncate()),
-                Collider::rectangle(height, width),
-            ));
+            if first_shot || delayed_enough {
+                // Projectile size
+                let width = attack.size.x;
+                let height = attack.size.y;
+
+                // Projectile transform
+                let position =
+                    transform.translation + transform.rotation * Vec3::X * (PLAYER_RADIUS + 10.0);
+                let rotation = transform.rotation;
+
+                // Projectile movement
+                let direction = position - transform.translation;
+                let speed = attack.speed;
+                let velocity = direction * speed;
+
+                commands.spawn((
+                    AttackProjectile::new(transform.translation.truncate(), attack.range),
+                    ColorMesh2dBundle {
+                        mesh: meshes.add(Rectangle::new(height, width)).into(),
+                        material: materials.add(Color::linear_rgb(0.8, 0.6, 0.8)),
+                        transform: Transform::from_translation(position).with_rotation(rotation),
+                        ..default()
+                    },
+                    RigidBody::Dynamic,
+                    LinearVelocity(velocity.truncate()),
+                    Collider::rectangle(height, width),
+                ));
+
+                last_attack.0 = Some(Timer::from_seconds(attack.attack_speed, TimerMode::Once));
+            }
+        }
+    }
+}
+
+pub fn despawn_collided_projectiles(
+    mut commands: Commands,
+    projectiles: Query<(Entity, &CollidingEntities), With<AttackProjectile>>,
+) {
+    for (entity, colliding_entities) in projectiles.iter() {
+        if colliding_entities.len() > 0 {
+            commands.entity(entity).despawn();
         }
     }
 }
 
 pub fn despawn_out_of_range_projectiles(
     mut commands: Commands,
-    mut projectiles: Query<(Entity, &mut AttackProjectile)>,
-    time: Res<Time>,
+    mut projectiles: Query<(Entity, &Transform, &mut AttackProjectile)>,
 ) {
-    for (entity, mut attack_projectile) in projectiles.iter_mut() {
-        attack_projectile.despawn_timer.tick(time.delta());
+    for (entity, transform, attack_projectile) in projectiles.iter_mut() {
+        let traveled_distance = transform
+            .translation
+            .truncate()
+            .distance(attack_projectile.initial_position);
 
-        if attack_projectile.despawn_timer.finished() {
+        if traveled_distance > attack_projectile.range {
             commands.entity(entity).despawn();
         }
     }

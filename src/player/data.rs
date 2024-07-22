@@ -113,13 +113,15 @@ impl Attack {
 pub struct AttackProjectile {
     pub initial_position: Vec2,
     pub range: f32,
+    pub damage: f32,
 }
 
 impl AttackProjectile {
-    pub fn new(initial_position: Vec2, range: f32) -> Self {
+    pub fn new(initial_position: Vec2, range: f32, damage: f32) -> Self {
         AttackProjectile {
             initial_position,
             range,
+            damage,
         }
     }
 }

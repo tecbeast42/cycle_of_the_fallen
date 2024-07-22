@@ -14,6 +14,7 @@ mod walls;
 
 use avian2d::prelude::*;
 use bevy::asset::AssetMetaCheck;
+use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use character::CharactersPlugin;
 use ennemy::prelude::*;
@@ -28,13 +29,18 @@ fn main() {
         // Setting global timer for physics update
         .insert_resource(Time::new_with(Physics::fixed_hz(144.0)))
         .add_plugins((
-            DefaultPlugins.set(AssetPlugin {
-                // Wasm builds will check for meta files (that don't exist) if this isn't set.
-                // This causes errors and even panics in web builds on itch.
-                // See https://github.com/bevyengine/bevy_github_ci_template/issues/48.
-                meta_check: AssetMetaCheck::Never,
-                ..default()
-            }),
+            DefaultPlugins
+                .set(AssetPlugin {
+                    // Wasm builds will check for meta files (that don't exist) if this isn't set.
+                    // This causes errors and even panics in web builds on itch.
+                    // See https://github.com/bevyengine/bevy_github_ci_template/issues/48.
+                    meta_check: AssetMetaCheck::Never,
+                    ..default()
+                })
+                .set(LogPlugin {
+                    filter: "info,cycle_of_the_fallen=debug".to_string(),
+                    ..default()
+                }),
             PhysicsPlugins::default().with_length_unit(PLAYER_RADIUS),
         ))
         .add_plugins(PlayerPlugin)

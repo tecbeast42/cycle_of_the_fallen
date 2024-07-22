@@ -1,3 +1,5 @@
+use crate::game::GameState;
+
 use super::prelude::*;
 use avian2d::prelude::*;
 use bevy::prelude::*;
@@ -12,6 +14,7 @@ pub fn spawn_ennemies(
 ) {
     commands.spawn((
         Ennemy,
+        StateScoped(GameState::Play),
         EnnemyStats::new(EnnemyType::Dummy),
         ColorMesh2dBundle {
             mesh: meshes.add(Circle::new(TURRET_RADIUS)).into(),

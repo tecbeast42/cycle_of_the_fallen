@@ -596,14 +596,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy_github_ci_template"
-version = "0.1.0"
-dependencies = [
- "avian2d",
- "bevy",
-]
-
-[[package]]
 name = "bevy_gizmos"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1587,6 +1579,14 @@ name = "cursor-icon"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "96a6ac251f4a2aca6b3f91340350eab87ae57c3f127ffeb585e92bd336717991"
+
+[[package]]
+name = "cycle_of_the_fallen"
+version = "0.1.0"
+dependencies = [
+ "avian2d",
+ "bevy",
+]
 
 [[package]]
 name = "d3d12"

@@ -39,9 +39,11 @@ impl Plugin for PlayerPlugin {
                     rotate_player_read,
                     player_attack_write,
                     player_attack_read,
+                    check_for_level_complete,
                     despawn_out_of_range_projectiles,
                 )
-                    .chain(),
+                    .chain()
+                    .run_if(in_state(GameState::Play)),
             )
             .add_systems(PostProcessCollisions, despawn_collided_projectiles);
     }

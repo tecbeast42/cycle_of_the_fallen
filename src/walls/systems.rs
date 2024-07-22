@@ -1,3 +1,5 @@
+use crate::game::GameState;
+
 use super::prelude::*;
 use avian2d::prelude::*;
 use bevy::prelude::*;
@@ -16,6 +18,7 @@ pub fn spawn_walls(
     // Left wall
     commands.spawn((
         Wall,
+        StateScoped(GameState::Play),
         ColorMesh2dBundle {
             mesh: meshes
                 .add(Rectangle::from_size(Vec2::new(WALL_WIDTH, level_height)))

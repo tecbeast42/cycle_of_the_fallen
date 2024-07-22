@@ -41,6 +41,15 @@ impl Levels {
     }
 }
 
+impl Levels {
+    pub fn unlock_next_level(&mut self) {
+        let Some(level) = self.iter_mut().find(|l| l.unlocked == false) else {
+            return;
+        };
+        level.unlocked = true;
+    }
+}
+
 impl Default for Levels {
     fn default() -> Self {
         Self(vec![

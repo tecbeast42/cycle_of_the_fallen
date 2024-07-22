@@ -2,9 +2,9 @@ use bevy::prelude::*;
 
 pub const TURRET_RADIUS: f32 = 15.0;
 
-/// Marker component of the ennemies.
+/// Marker component of the enemies.
 ///
-/// This component allow to identify the ennemies during Bevy queries.
+/// This component allow to identify the enemies during Bevy queries.
 #[derive(Component, Debug)]
 pub struct Ennemy;
 
@@ -12,7 +12,7 @@ pub struct Ennemy;
 ///
 /// - The knight have lot of health and does damage with melee attacks.
 /// - The ranger shoots from long range but with low damage.
-/// - The wizard inflicts hight damages at medium range but is very weak.
+/// - The wizard inflicts high damages at medium range but is very weak.
 pub enum EnnemyType {
     Dummy,
     Turret,

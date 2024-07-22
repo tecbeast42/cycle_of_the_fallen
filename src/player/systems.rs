@@ -1,5 +1,7 @@
-use crate::character::prelude::SelectedCharacter;
+use crate::game::{GameState, Levels};
 use crate::level_history::prelude::*;
+use crate::EnnemyStats;
+use crate::{character::prelude::SelectedCharacter, Ennemy};
 
 use super::prelude::*;
 use avian2d::prelude::*;
@@ -17,6 +19,7 @@ pub fn spawn_player(
     commands
         .spawn((
             Player,
+            StateScoped(GameState::Play),
             PlayerStats::new(selected_character.0.clone()),
             ColorMesh2dBundle {
                 mesh: meshes.add(Circle::new(PLAYER_RADIUS)).into(),
@@ -191,7 +194,7 @@ pub fn player_attack_read(
             let velocity = direction * speed;
 
             commands.spawn((
-                AttackProjectile::new(transform.translation.truncate(), attack.range),
+                AttackProjectile::new(transform.translation.truncate(), attack.range, stats.damage),
                 ColorMesh2dBundle {
                     mesh: meshes.add(Rectangle::new(height, width)).into(),
                     material: materials.add(Color::linear_rgb(0.8, 0.6, 0.8)),
@@ -218,17 +221,44 @@ pub fn despawn_out_of_range_projectiles(
 
         if traveled_distance > attack_projectile.range {
             commands.entity(entity).despawn();
+            debug!("Projectile out of range {entity:?}");
         }
     }
 }
 
 pub fn despawn_collided_projectiles(
     mut commands: Commands,
-    projectiles: Query<(Entity, &CollidingEntities), With<AttackProjectile>>,
+    projectiles: Query<(Entity, &CollidingEntities, &AttackProjectile)>,
+    mut ennemy_query: Query<&mut EnnemyStats, With<Ennemy>>,
 ) {
-    for (entity, colliding_entities) in projectiles.iter() {
-        if colliding_entities.len() > 0 {
-            commands.entity(entity).despawn();
+    for (entity, colliding_entities, attack_projectile) in projectiles.iter() {
+        for colliding_entity in colliding_entities.iter() {
+            let Ok(mut ennemy_stats) = ennemy_query.get_mut(*colliding_entity) else {
+                continue;
+            };
+            ennemy_stats.health -= attack_projectile.damage;
+
+            if ennemy_stats.health <= 0.0 {
+                commands.entity(*colliding_entity).despawn_recursive();
+                debug!("Despawning enemy {colliding_entity:?}");
+            }
         }
+
+        if colliding_entities.len() > 0 {
+            // despawn the projectile
+            commands.entity(entity).despawn();
+            debug!("Despawning projectile on collsion {entity:?}");
+        }
+    }
+}
+
+pub fn check_for_level_complete(
+    query: Query<(), With<Ennemy>>,
+    mut levels: ResMut<Levels>,
+    mut game_state: ResMut<NextState<GameState>>,
+) {
+    if query.iter().len() == 0 {
+        levels.unlock_next_level();
+        game_state.set(GameState::LevelSelection);
     }
 }

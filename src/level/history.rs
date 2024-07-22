@@ -56,7 +56,12 @@ pub trait SetEntity {
     fn set_entity(&mut self, entity: Entity);
 }
 
-pub fn record_event<E: Event + Clone + std::fmt::Debug>(
+pub trait EventSourceMethods {
+    fn get_source(&self) -> EventSource;
+    fn set_source(&mut self, source: EventSource);
+}
+
+pub fn record_event<E: Event + EventSourceMethods + Clone + std::fmt::Debug>(
     mut history: ResMut<LevelHistory<E>>,
     ghost_list: Res<PlayerGhostList>,
     start_time: Res<LevelStartTime>,
@@ -64,11 +69,17 @@ pub fn record_event<E: Event + Clone + std::fmt::Debug>(
     mut event: EventReader<E>,
 ) {
     for e in event.read() {
+        if e.get_source() == EventSource::Replay {
+            continue;
+        }
         let timestamp = time.elapsed().as_secs_f64() - start_time.0;
+        let ghost = GhostIdentifier(ghost_list.ghosts.len());
+        let mut recorded_event = e.clone();
+        recorded_event.set_source(EventSource::Replay);
         history.events.push(EventRecord {
-            ghost: GhostIdentifier(ghost_list.ghosts.len()),
+            ghost,
             timestamp,
-            event: e.clone(),
+            event: recorded_event,
         });
     }
 
@@ -113,7 +124,7 @@ pub fn spawn_ghosts(
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut ghost_list: ResMut<PlayerGhostList>,
 ) {
-    let ghost_mesh = meshes.add(Circle { radius: 50.0 });
+    let ghost_mesh = meshes.add(Circle { radius: 10.0 });
 
     for (i, g) in ghost_list.ghosts.iter_mut().enumerate() {
         if let Some(e) = g.entity {
@@ -124,13 +135,10 @@ pub fn spawn_ghosts(
             .spawn((
                 MaterialMesh2dBundle {
                     mesh: Mesh2dHandle(ghost_mesh.clone()),
-                    material: materials.add(Color::srgb(1.0, 0.5, 0.5)),
+                    material: materials.add(Color::srgb(0.0, 0.0, 1.0)),
                     transform: Transform::from_xyz(0.0, 0.0, 0.0),
                     ..Default::default()
                 },
-                RigidBody::Dynamic,
-                Collider::circle(50.0),
-                LinearVelocity::default(),
                 GhostIdentifier(i),
                 g.speed.clone(),
             ))
@@ -165,7 +173,7 @@ pub fn debug_history<E: Event + EventRecordDebug>(
     }
     let delta = time.delta_seconds_f64();
     let start = time.elapsed().as_secs_f64() - delta - start_time.0;
-    let scale = 10.0;
+    let scale = 100.0;
 
     let height = Val::Px(50.0);
     let container = commands
@@ -212,7 +220,7 @@ pub fn debug_history<E: Event + EventRecordDebug>(
                         height,
                         position_type: PositionType::Absolute,
                         top: Val::Px(0.0),
-                        left: Val::Px(timestamp as f32 * 10.0),
+                        left: Val::Px(timestamp as f32 * scale),
                         ..default()
                     },
                     background_color: color.into(),

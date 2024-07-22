@@ -24,6 +24,16 @@ impl SetEntity for CharacterMoveEvent {
     }
 }
 
+impl EventSourceMethods for CharacterMoveEvent {
+    fn get_source(&self) -> EventSource {
+        self.source
+    }
+
+    fn set_source(&mut self, source: EventSource) {
+        self.source = source;
+    }
+}
+
 impl EventRecordDebug for CharacterMoveEvent {
     fn get_debug_color(&self) -> Color {
         Color::srgba(0.0, 1.0, 0.0, 0.5)
@@ -40,14 +50,11 @@ pub fn spawn_character(
 ) {
     commands.spawn((
         MaterialMesh2dBundle {
-            mesh: Mesh2dHandle(meshes.add(Circle { radius: 50.0 })),
+            mesh: Mesh2dHandle(meshes.add(Circle { radius: 10.0 })),
             material: materials.add(Color::srgb(1.0, 0.5, 0.5)),
             transform: Transform::from_xyz(0.0, 0.0, 0.0),
             ..Default::default()
         },
-        RigidBody::Dynamic,
-        Collider::circle(50.0),
-        LinearVelocity::default(),
         Controllable,
         Speed(10.0),
     ));
@@ -88,17 +95,21 @@ pub fn character_move_input(
 
 pub fn character_move_read(
     mut move_event: EventReader<CharacterMoveEvent>,
-    mut targets: Query<(&mut LinearVelocity, &Speed)>,
+    mut targets: Query<(&mut Transform, &Speed)>,
     time: Res<Time>,
 ) {
     for e in move_event.read() {
         match targets.get_mut(e.entity) {
-            Ok((mut velocity, speed)) => {
-                info!("Characters move {:?}", e.source);
-                velocity.0 = e.delta * speed.0 * time.delta_seconds();
+            Ok((mut transform, speed)) => {
+                let delta = e.delta * speed.0 * time.delta_seconds();
+                transform.translation.x += delta.x;
+                transform.translation.y += delta.y;
             }
             Err(_) => {
-                error!("Character not found ({:?}): {:?}", e.source, e.entity);
+                error!(
+                    "Character not found (source: {:?}): {:?}",
+                    e.source, e.entity
+                );
             }
         }
     }

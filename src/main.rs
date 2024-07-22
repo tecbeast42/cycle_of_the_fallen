@@ -7,6 +7,7 @@
 mod character;
 mod ennemy;
 mod game;
+mod level_history;
 mod levels;
 mod player;
 mod walls;
@@ -16,6 +17,7 @@ use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
 use character::CharactersPlugin;
 use ennemy::prelude::*;
+use level_history::prelude::*;
 use player::prelude::*;
 use walls::prelude::*;
 
@@ -41,6 +43,7 @@ fn main() {
         .add_plugins(levels::LevelsPlugin)
         .add_plugins(game::GamePlugin)
         .add_plugins(CharactersPlugin)
+        .add_plugins(LevelHistoryPlugin)
         .add_systems(Startup, setup)
         .run();
 }

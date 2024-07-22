@@ -17,7 +17,8 @@ impl Plugin for LevelsPlugin {
         app.add_systems(OnEnter(GameState::LevelSelection), spawn_level_selection)
             .add_systems(
                 Update,
-                (interaction_on_level_selection_buttons).run_if(in_state(GameState::LevelSelection)),
+                (interaction_on_level_selection_buttons)
+                    .run_if(in_state(GameState::LevelSelection)),
             );
     }
 }

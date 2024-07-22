@@ -25,6 +25,7 @@ pub enum Class {
 /// - The sword does melee damage.
 /// - The bow inflicts damage from far range but has low damage.
 /// - The staff inflicts damage from medium range but with high damage and slow travel time.
+#[derive(Clone, Debug)]
 pub enum Weapon {
     Sword,
     Bow,
@@ -35,7 +36,7 @@ pub enum Weapon {
 ///
 /// This statistics are those of a player (the current one or a ghost).
 /// They are defined by the class of that given player
-#[derive(Component, Debug)]
+#[derive(Component, Debug, Clone)]
 pub struct PlayerStats {
     pub health: f32,
     pub damage: f32,
@@ -68,7 +69,7 @@ impl PlayerStats {
 ///
 /// This statistics are those of the player attacks (the current one or a ghost).
 /// They are defined by the class of that given player
-#[derive(Component, Debug)]
+#[derive(Component, Debug, Clone)]
 pub struct Attack {
     pub ranged: bool,
     pub size: Vec2,

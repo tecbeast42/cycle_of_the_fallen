@@ -8,6 +8,7 @@ pub enum GameState {
     LevelSelection,
     CharacterSelection,
     Play,
+    GameOver,
 }
 
 /// holds the current level if there is one
@@ -65,6 +66,20 @@ impl Plugin for GamePlugin {
         app.init_state::<GameState>()
             .enable_state_scoped_entities::<GameState>()
             .init_resource::<CurrentLevel>()
-            .init_resource::<Levels>();
+            .init_resource::<Levels>()
+            .add_systems(
+                Update,
+                debug_game_over.run_if(|keyboard_input: Res<ButtonInput<KeyCode>>| {
+                    keyboard_input.just_pressed(KeyCode::KeyK)
+                }),
+            );
+    }
+}
+
+fn debug_game_over(state: Res<State<GameState>>, mut next_state: ResMut<NextState<GameState>>) {
+    if state.get() == &GameState::GameOver {
+        next_state.set(GameState::LevelSelection);
+    } else if state.get() == &GameState::Play {
+        next_state.set(GameState::GameOver);
     }
 }

@@ -18,7 +18,6 @@ pub fn spawn_player(
         .spawn((
             Player,
             PlayerStats::new(selected_character.0.clone()),
-            LastAttack(None),
             ColorMesh2dBundle {
                 mesh: meshes.add(Circle::new(PLAYER_RADIUS)).into(),
                 material: materials.add(Color::linear_rgb(0.2, 0.5, 0.2)),
@@ -144,31 +143,25 @@ pub fn rotate_player_read(
 ///
 /// Use left mouse click to perform an attack with the player's weapon.
 pub fn player_attack_write(
-    mut player: Query<(Entity, &PlayerStats, &mut LastAttack), With<Player>>,
+    mut player: Query<(Entity, &mut PlayerStats), With<Player>>,
     mouse: Res<ButtonInput<MouseButton>>,
     time: Res<Time>,
     mut events: EventWriter<PlayerAttackEvent>,
 ) {
-    if let Ok((entity, stats, mut last_attack)) = player.get_single_mut() {
-        if mouse.just_pressed(MouseButton::Left) {
-            if let Some(timer) = &mut last_attack.0 {
-                timer.tick(time.delta());
-            }
-            let first_shot = last_attack.0.is_none();
-            let delayed_enough = last_attack.0.clone().is_some_and(|timer| timer.finished());
+    let Ok((entity, mut stats)) = player.get_single_mut() else {
+        return;
+    };
+    stats.attack.attack_speed.tick(time.delta());
 
-            if !first_shot && !delayed_enough {
-                return;
-            }
-            events.send(PlayerAttackEvent {
-                entity,
-                source: EventSource::Input,
-            });
-            last_attack.0 = Some(Timer::from_seconds(
-                stats.attack.attack_speed,
-                TimerMode::Once,
-            ));
-        }
+    if !mouse.pressed(MouseButton::Left) {
+        return;
+    }
+    if stats.attack.attack_speed.finished() {
+        events.send(PlayerAttackEvent {
+            entity,
+            source: EventSource::Input,
+        });
+        stats.attack.attack_speed.reset();
     }
 }
 

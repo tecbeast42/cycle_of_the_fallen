@@ -75,7 +75,7 @@ pub struct Attack {
     pub size: Vec2,
     pub speed: f32,
     pub range: f32,
-    pub attack_speed: f32,
+    pub attack_speed: Timer,
 }
 
 impl Attack {
@@ -86,21 +86,21 @@ impl Attack {
                 size: Vec2::new(12.0, 12.0),
                 speed: 0.0,
                 range: 10.0,
-                attack_speed: 0.3,
+                attack_speed: Timer::from_seconds(0.3, TimerMode::Once),
             },
             Weapon::Bow => Self {
                 ranged: true,
                 size: Vec2::new(3.0, 8.0),
                 speed: 30.0,
                 range: 600.0,
-                attack_speed: 0.1,
+                attack_speed: Timer::from_seconds(0.1, TimerMode::Once),
             },
             Weapon::Staff => Self {
                 ranged: true,
                 size: Vec2::new(8.0, 8.0),
                 speed: 15.0,
                 range: 400.0,
-                attack_speed: 0.3,
+                attack_speed: Timer::from_seconds(0.3, TimerMode::Once),
             },
         }
     }
@@ -123,5 +123,3 @@ impl AttackProjectile {
         }
     }
 }
-#[derive(Component)]
-pub struct LastAttack(pub Option<Timer>);

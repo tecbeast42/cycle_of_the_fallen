@@ -2,7 +2,7 @@ use bevy::{color::palettes::tailwind, prelude::*};
 
 use crate::game::{CurrentLevel, GameState, Levels};
 
-use super::prelude::LevelSelectionButton;
+use super::prelude::*;
 
 pub fn spawn_level_selection(
     mut commands: Commands,

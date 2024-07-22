@@ -5,7 +5,7 @@ use crate::game::Level;
 /// holds temporary if the button represents
 /// an unlocked level and which level it is
 #[derive(Component, Default)]
-pub struct LevelSelectionButton{
+pub struct LevelSelectionButton {
     pub level: usize,
     pub unlocked: bool,
 }

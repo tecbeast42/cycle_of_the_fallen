@@ -70,7 +70,9 @@ pub fn record_event<E: Event + Clone + std::fmt::Debug>(
             timestamp,
             event: e.clone(),
         });
+    }
 
+    if !event.is_empty() {
         info!("Recorded events: {:?}", history.events.len())
     }
 }
@@ -89,21 +91,16 @@ pub fn replay_event<E: Event + Clone + std::fmt::Debug + SetEntity>(
 ) {
     for record in history.events.iter() {
         let timestamp = record.timestamp;
-        let end = time.elapsed().as_secs_f64() - start_time.0;
-        let start = end - time.delta_seconds_f64() + start_time.0;
+        let delta = time.delta_seconds_f64();
+        let start = time.elapsed().as_secs_f64() - delta - start_time.0;
+        let end = start + delta;
 
-        let is_between = timestamp > start && timestamp < end;
+        let is_between = timestamp > start && timestamp <= end;
 
         if is_between {
-            info!("IS BETWEEN");
             if let Some(entity) = ghost_list.get_ghost(record.ghost).and_then(|g| g.entity) {
                 let mut event = record.event.clone();
                 event.set_entity(entity);
-                info!(
-                    "Sending event ({} > {} < {}) : {:?}",
-                    start, timestamp, end, event
-                );
-
                 event_writer.send(event);
             }
         }
@@ -150,4 +147,82 @@ pub fn ghost_despawn(mut commands: Commands, mut ghost_list: ResMut<PlayerGhostL
             g.entity = None;
         }
     }
+}
+
+pub trait EventRecordDebug {
+    fn get_debug_color(&self) -> Color;
+}
+
+pub fn debug_history<E: Event + EventRecordDebug>(
+    mut commands: Commands,
+    history: Res<LevelHistory<E>>,
+    time: Res<Time>,
+    start_time: Res<LevelStartTime>,
+    mut container_id: Local<Option<Entity>>,
+) {
+    if let Some(container) = container_id.as_ref() {
+        commands.entity(*container).despawn_recursive();
+    }
+    let delta = time.delta_seconds_f64();
+    let start = time.elapsed().as_secs_f64() - delta - start_time.0;
+    let scale = 10.0;
+
+    let height = Val::Px(50.0);
+    let container = commands
+        .spawn(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                height,
+                position_type: PositionType::Absolute,
+                top: Val::Px(0.0),
+                left: Val::Px(0.0),
+                ..default()
+            },
+            background_color: Color::srgba(0.0, 0.0, 0.0, 0.5).into(),
+            ..default()
+        })
+        .id();
+
+    let current_time_tracker = commands
+        .spawn(NodeBundle {
+            style: Style {
+                width: Val::Px(delta as f32 * scale),
+                height,
+                position_type: PositionType::Absolute,
+                top: Val::Px(0.0),
+                left: Val::Px(start as f32 * scale),
+                ..default()
+            },
+            background_color: Color::srgba(1.0, 1.0, 0.0, 0.5).into(),
+            ..default()
+        })
+        .id();
+
+    let mut records = history
+        .events
+        .iter()
+        .map(|record| {
+            let timestamp = record.timestamp;
+            let color = record.event.get_debug_color();
+
+            commands
+                .spawn(NodeBundle {
+                    style: Style {
+                        width: Val::Px(1.0),
+                        height,
+                        position_type: PositionType::Absolute,
+                        top: Val::Px(0.0),
+                        left: Val::Px(timestamp as f32 * 10.0),
+                        ..default()
+                    },
+                    background_color: color.into(),
+                    ..default()
+                })
+                .id()
+        })
+        .collect::<Vec<_>>();
+
+    records.push(current_time_tracker);
+    commands.entity(container).push_children(&records);
+    *container_id = Some(container);
 }

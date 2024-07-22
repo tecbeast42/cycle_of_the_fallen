@@ -24,6 +24,12 @@ impl SetEntity for CharacterMoveEvent {
     }
 }
 
+impl EventRecordDebug for CharacterMoveEvent {
+    fn get_debug_color(&self) -> Color {
+        Color::srgba(0.0, 1.0, 0.0, 0.5)
+    }
+}
+
 #[derive(Event, Debug)]
 pub struct GameOverEvent;
 

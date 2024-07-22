@@ -45,6 +45,7 @@ fn main() {
                 character_move_read,
                 record_event::<CharacterMoveEvent>,
                 replay_event::<CharacterMoveEvent>,
+                debug_history::<CharacterMoveEvent>,
                 toggle_game_over
                     .run_if(|keys: Res<ButtonInput<KeyCode>>| keys.just_pressed(KeyCode::KeyK)),
                 // character_kill

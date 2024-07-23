@@ -97,20 +97,21 @@ pub fn execute_always_attack(
         // check if there is something to attack
         if distance < f32::MAX {
             let mut projectile_transform = ennemy_tranform.to_owned();
-            projectile_transform.translation += Vec3::X * 20.0;
-            projectile_transform.look_at(target.extend(0.0), Vec3::Z);
+            let direction = (target - projectile_transform.translation.truncate()).normalize();
+            projectile_transform.translation += direction.extend(0.0) * 23.0;
+            let velocity = direction * 200.0;
             // attack
             commands.spawn((
                 AttackProjectile::new(projectile_transform.translation.truncate(), 3000.0),
                 ColorMesh2dBundle {
-                    mesh: meshes.add(Rectangle::new(7.0, 16.0)).into(),
+                    mesh: meshes.add(Circle::new(7.0)).into(),
                     material: materials.add(Color::from(tailwind::PINK_400)),
                     transform: projectile_transform,
                     ..default()
                 },
                 RigidBody::Dynamic,
-                LinearVelocity(Vec2::X * 125.0),
-                Collider::rectangle(7.0, 16.0),
+                LinearVelocity(velocity),
+                Collider::circle(7.0),
             ));
         }
     }

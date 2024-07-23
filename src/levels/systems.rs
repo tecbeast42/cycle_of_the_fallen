@@ -75,7 +75,7 @@ pub fn spawn_level_selection(
                             score,
                             TextStyle {
                                 font: asset_server.load("Kalam-Regular.ttf"),
-                                font_size: 32.0,
+                                font_size: 70.0,
                                 ..default()
                             },
                         ));
@@ -97,7 +97,7 @@ pub fn interaction_on_level_selection_buttons(
         *background_color = match (*interaction, level_selection_button.unlocked) {
             (Interaction::Pressed, true) => {
                 game_state.set(GameState::CharacterSelection);
-                current_level.0 = levels.id(level_selection_button.level);
+                current_level.0 = Some(levels.id(level_selection_button.level));
                 tailwind::LIME_300.into()
             }
             (Interaction::Hovered, true) => tailwind::LIME_500.into(),

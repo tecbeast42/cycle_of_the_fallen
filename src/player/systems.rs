@@ -1,4 +1,4 @@
-use crate::game::{GameState, Levels};
+use crate::game::{CurrentLevel, GameState, Levels};
 use crate::level_history::prelude::*;
 use crate::EnnemyStats;
 use crate::{character::prelude::SelectedCharacter, Ennemy};
@@ -255,10 +255,19 @@ pub fn despawn_collided_projectiles(
 pub fn check_for_level_complete(
     query: Query<(), With<Ennemy>>,
     mut levels: ResMut<Levels>,
+    mut current_level: ResMut<CurrentLevel>,
     mut game_state: ResMut<NextState<GameState>>,
+    player_ghost_list: Res<PlayerGhostList>,
 ) {
     if query.iter().len() == 0 {
-        levels.unlock_next_level();
+        let Some(level) = &current_level.0 else {
+            warn!("No current level in check_for_level_complete");
+            return;
+        };
+        info!("Completed level {} !!!!", level.id);
+        levels.unlock_level(level.id + 1);
+        levels.set_next_score(level.id, player_ghost_list.ghosts.len() + 1);
+        current_level.0 = None;
         game_state.set(GameState::LevelSelection);
     }
 }

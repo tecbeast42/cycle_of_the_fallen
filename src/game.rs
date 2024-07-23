@@ -15,6 +15,12 @@ pub enum GameState {
 #[derive(Resource, Default)]
 pub struct CurrentLevel(pub Option<Level>);
 
+impl CurrentLevel {
+    pub fn id(self) -> Option<usize> {
+        self.0.map(|level| level.id)
+    }
+}
+
 #[derive(Clone)]
 pub struct Level {
     pub id: usize,
@@ -30,23 +36,27 @@ pub struct Level {
 #[derive(Resource, Deref, DerefMut)]
 pub struct Levels(Vec<Level>);
 impl Levels {
-    pub fn id(&self, id: usize) -> Option<Level> {
-        for level in self.0.iter() {
-            if level.id == id {
-                return Some(level.clone());
-            }
-        }
-
-        panic!("Could not get the right level from Levels");
+    pub fn id(&self, id: usize) -> Level {
+        self.0
+            .iter()
+            .find(|l| l.id == id)
+            .expect("Could not get the right level from Levels")
+            .clone()
     }
-}
 
-impl Levels {
-    pub fn unlock_next_level(&mut self) {
-        let Some(level) = self.iter_mut().find(|l| l.unlocked == false) else {
-            return;
-        };
-        level.unlocked = true;
+    fn id_mut(&mut self, id: usize) -> &mut Level {
+        self.0
+            .iter_mut()
+            .find(|l| l.id == id)
+            .expect("Could not get the right level from Levels")
+    }
+
+    pub fn set_next_score(&mut self, id: usize, cycles: usize) {
+        self.id_mut(id).cycles = Some(cycles);
+    }
+
+    pub fn unlock_level(&mut self, id: usize) {
+        self.id_mut(id).unlocked = true;
     }
 }
 

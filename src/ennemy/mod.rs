@@ -15,6 +15,10 @@ pub struct EnnemyPlugin;
 
 impl Plugin for EnnemyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Play), spawn_ennemies);
+        app.add_systems(OnEnter(GameState::Play), spawn_ennemies)
+            .add_systems(
+                Update,
+                (tick_attack_speed, execute_always_attack).run_if(in_state(GameState::Play)),
+            );
     }
 }

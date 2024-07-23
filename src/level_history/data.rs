@@ -6,6 +6,10 @@ pub struct LevelHistory<T: Event> {
     pub events: Vec<EventRecord<T>>,
 }
 
+/// An indicator component for a player ghost
+#[derive(Component, Default)]
+pub struct Ghost;
+
 pub struct PlayerGhost {
     pub entity: Option<Entity>,
     pub stats: PlayerStats,

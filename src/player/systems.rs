@@ -1,6 +1,5 @@
 use crate::game::{CurrentLevel, GameState, Levels};
 use crate::level_history::prelude::*;
-use crate::EnnemyStats;
 use crate::{character::prelude::SelectedCharacter, Ennemy};
 
 use super::prelude::*;
@@ -194,7 +193,7 @@ pub fn player_attack_read(
             let velocity = direction * speed;
 
             commands.spawn((
-                AttackProjectile::new(transform.translation.truncate(), attack.range, stats.damage),
+                AttackProjectile::new(transform.translation.truncate(), attack.range),
                 ColorMesh2dBundle {
                     mesh: meshes.add(Rectangle::new(height, width)).into(),
                     material: materials.add(Color::linear_rgb(0.8, 0.6, 0.8)),
@@ -228,17 +227,12 @@ pub fn despawn_out_of_range_projectiles(
 
 pub fn despawn_collided_projectiles(
     mut commands: Commands,
-    projectiles: Query<(Entity, &CollidingEntities, &AttackProjectile)>,
-    mut ennemy_query: Query<&mut EnnemyStats, With<Ennemy>>,
+    projectiles: Query<(Entity, &CollidingEntities), With<AttackProjectile>>,
+    ennemy_query: Query<(), With<Ennemy>>,
 ) {
-    for (entity, colliding_entities, attack_projectile) in projectiles.iter() {
+    for (entity, colliding_entities) in projectiles.iter() {
         for colliding_entity in colliding_entities.iter() {
-            let Ok(mut ennemy_stats) = ennemy_query.get_mut(*colliding_entity) else {
-                continue;
-            };
-            ennemy_stats.health -= attack_projectile.damage;
-
-            if ennemy_stats.health <= 0.0 {
+            if ennemy_query.get(*colliding_entity).is_ok() {
                 commands.entity(*colliding_entity).despawn_recursive();
                 debug!("Despawning enemy {colliding_entity:?}");
             }

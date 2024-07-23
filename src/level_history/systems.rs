@@ -171,6 +171,7 @@ pub fn spawn_ghosts(
         }
         let entity = commands
             .spawn((
+                Ghost,
                 g.stats.clone(),
                 ColorMesh2dBundle {
                     mesh: meshes.add(Circle::new(PLAYER_RADIUS)).into(),

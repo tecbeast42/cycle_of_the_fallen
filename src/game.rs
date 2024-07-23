@@ -15,12 +15,6 @@ pub enum GameState {
 #[derive(Resource, Default)]
 pub struct CurrentLevel(pub Option<Level>);
 
-impl CurrentLevel {
-    pub fn id(self) -> Option<usize> {
-        self.0.map(|level| level.id)
-    }
-}
-
 #[derive(Clone)]
 pub struct Level {
     pub id: usize,
@@ -71,7 +65,7 @@ impl Default for Levels {
             },
             Level {
                 id: 2,
-                unlocked: false,
+                unlocked: true,
                 cycles: None,
                 characters: vec![Class::Knight, Class::Wizard],
             },

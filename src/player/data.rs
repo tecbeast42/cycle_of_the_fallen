@@ -38,8 +38,6 @@ pub enum Weapon {
 /// They are defined by the class of that given player
 #[derive(Component, Debug, Clone)]
 pub struct PlayerStats {
-    pub health: f32,
-    pub damage: f32,
     pub attack: Attack,
 }
 
@@ -47,18 +45,12 @@ impl PlayerStats {
     pub fn new(class: Class) -> Self {
         match class {
             Class::Knight => Self {
-                health: 100.0,
-                damage: 10.0,
                 attack: Attack::new(Weapon::Sword),
             },
             Class::Ranger => Self {
-                health: 100.0,
-                damage: 10.0,
                 attack: Attack::new(Weapon::Bow),
             },
             Class::Wizard => Self {
-                health: 100.0,
-                damage: 10.0,
                 attack: Attack::new(Weapon::Staff),
             },
         }
@@ -71,7 +63,6 @@ impl PlayerStats {
 /// They are defined by the class of that given player
 #[derive(Component, Debug, Clone)]
 pub struct Attack {
-    pub ranged: bool,
     pub size: Vec2,
     pub speed: f32,
     pub range: f32,
@@ -82,21 +73,18 @@ impl Attack {
     pub fn new(weapon: Weapon) -> Self {
         match weapon {
             Weapon::Sword => Self {
-                ranged: false,
                 size: Vec2::new(12.0, 12.0),
                 speed: 0.0,
                 range: 10.0,
                 attack_speed: Timer::from_seconds(0.3, TimerMode::Once),
             },
             Weapon::Bow => Self {
-                ranged: true,
                 size: Vec2::new(3.0, 8.0),
                 speed: 30.0,
                 range: 600.0,
                 attack_speed: Timer::from_seconds(0.1, TimerMode::Once),
             },
             Weapon::Staff => Self {
-                ranged: true,
                 size: Vec2::new(8.0, 8.0),
                 speed: 15.0,
                 range: 400.0,
@@ -113,15 +101,13 @@ impl Attack {
 pub struct AttackProjectile {
     pub initial_position: Vec2,
     pub range: f32,
-    pub damage: f32,
 }
 
 impl AttackProjectile {
-    pub fn new(initial_position: Vec2, range: f32, damage: f32) -> Self {
+    pub fn new(initial_position: Vec2, range: f32) -> Self {
         AttackProjectile {
             initial_position,
             range,
-            damage,
         }
     }
 }

@@ -258,8 +258,13 @@ pub fn check_for_level_complete(
             warn!("No current level in check_for_level_complete");
             return;
         };
+
         info!("Completed level {} !!!!", level.id);
-        levels.unlock_level(level.id + 1);
+
+        if levels.0.len() == level.id + 1 {
+            levels.unlock_level(level.id + 1);
+        }
+
         levels.set_next_score(level.id, player_ghost_list.ghosts.len() + 1);
         current_level.0 = None;
         game_state.set(GameState::LevelSelection);

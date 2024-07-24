@@ -28,7 +28,7 @@ pub struct Level {
 
 /// holds the current level if there is one
 #[derive(Resource, Deref, DerefMut)]
-pub struct Levels(Vec<Level>);
+pub struct Levels(pub Vec<Level>);
 impl Levels {
     pub fn id(&self, id: usize) -> Level {
         self.0

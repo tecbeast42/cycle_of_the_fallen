@@ -116,6 +116,5 @@ impl AttackProjectile {
 #[derive(Component, Debug)]
 pub struct Animation {
     pub indices: (usize, usize),
-    pub current_index: usize,
     pub travelled: f32,
 }

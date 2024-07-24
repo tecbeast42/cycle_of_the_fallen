@@ -1,5 +1,3 @@
-use std::f32::consts::PI;
-
 use crate::game::{CurrentLevel, GameState, Levels};
 use crate::level_history::prelude::*;
 use crate::{character::prelude::SelectedCharacter, Ennemy};
@@ -46,7 +44,6 @@ pub fn spawn_player(
             },
             Animation {
                 indices: (0, 3),
-                current_index: 0,
                 travelled: 0.0,
             },
             RigidBody::Dynamic,

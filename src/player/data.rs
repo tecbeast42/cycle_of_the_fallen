@@ -111,3 +111,10 @@ impl AttackProjectile {
         }
     }
 }
+
+/// Component to handle the sprites
+#[derive(Component, Debug)]
+pub struct Animation {
+    pub indices: (usize, usize),
+    pub travelled: f32,
+}

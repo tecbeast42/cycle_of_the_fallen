@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use crate::game::{CurrentLevel, GameState, Levels};
 use crate::level_history::prelude::*;
 use crate::{character::prelude::SelectedCharacter, Ennemy};
@@ -14,17 +16,38 @@ pub fn spawn_player(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     selected_character: Res<SelectedCharacter>,
+    asset_server: Res<AssetServer>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
+    let class = selected_character.0.clone();
+
+    let texture = match class {
+        Class::Knight => asset_server.load("knight.png"),
+        Class::Ranger => asset_server.load("ranger.png"),
+        Class::Wizard => asset_server.load("wizard.png"),
+    };
+    let layout = TextureAtlasLayout::from_grid(UVec2::splat(256), 4, 1, None, None);
+    let texture_atlas_layout = texture_atlas_layouts.add(layout);
+
     commands
         .spawn((
             Player,
             StateScoped(GameState::Play),
-            PlayerStats::new(selected_character.0.clone()),
-            ColorMesh2dBundle {
-                mesh: meshes.add(Circle::new(PLAYER_RADIUS)).into(),
-                material: materials.add(Color::linear_rgb(0.2, 0.5, 0.2)),
-                transform: Transform::from_xyz(-400.0, 0.0, 0.0),
+            PlayerStats::new(class),
+            SpriteBundle {
+                texture,
+                transform: Transform::from_xyz(-400.0, 0.0, 0.0)
+                    .with_scale(Vec3::new(0.3, 0.3, 0.3)),
                 ..default()
+            },
+            TextureAtlas {
+                layout: texture_atlas_layout,
+                index: 0,
+            },
+            Animation {
+                indices: (0, 3),
+                current_index: 0,
+                travelled: 0.0,
             },
             RigidBody::Dynamic,
             Collider::circle(PLAYER_RADIUS),
@@ -86,11 +109,23 @@ pub fn move_player_write(
 }
 
 pub fn move_player_read(
-    mut player: Query<&mut LinearVelocity>,
+    mut player: Query<(&mut LinearVelocity, &mut Animation, &mut TextureAtlas)>,
     mut events: EventReader<PlayerMoveEvent>,
 ) {
     for event in events.read() {
-        if let Ok(mut velocity) = player.get_mut(event.entity) {
+        if let Ok((mut velocity, mut animation, mut atlas)) = player.get_mut(event.entity) {
+            let travelled = Vec2::new(event.delta.x, event.delta.y).length();
+            animation.travelled += travelled;
+
+            if animation.travelled >= 800.0 {
+                atlas.index = if atlas.index == animation.indices.1 {
+                    animation.indices.0
+                } else {
+                    atlas.index + 1
+                };
+                animation.travelled -= 800.0
+            }
+
             velocity.x = event.delta.x;
             velocity.y = event.delta.y;
         }

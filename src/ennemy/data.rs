@@ -60,55 +60,25 @@ impl AttackSpeed {
     }
 }
 
-/// Indicate that this [`Ennemy`] will always
-/// attack the player no mather what
-#[derive(Component)]
-pub struct AlwaysAttack;
-
 #[derive(Bundle)]
 pub struct EnemyBundle {
     pub enemy: Ennemy,
     pub kind: EnnemyKind,
-    pub team: Team,
     pub targetable: Targetable,
-    pub mesh: ColorMesh2dBundle,
     pub rigid_body: RigidBody,
     pub collider: Collider,
+    pub collision_layers: CollisionLayers,
 }
 
 impl EnemyBundle {
-    pub fn new(
-        kind: EnnemyKind,
-        radius: f32,
-        meshes: &mut ResMut<Assets<Mesh>>,
-        materials: &mut ResMut<Assets<ColorMaterial>>,
-    ) -> Self {
+    pub fn new(kind: EnnemyKind, radius: f32) -> Self {
         Self {
             enemy: Ennemy,
             kind,
-            team: Team::Enemy,
             targetable: Targetable,
-            mesh: ColorMesh2dBundle {
-                mesh: meshes.add(Circle::new(radius)).into(),
-                material: materials.add(Color::linear_rgb(0.6, 0.2, 0.1)),
-                transform: Transform::from_xyz(300.0, 100.0, 0.0),
-                ..default()
-            },
             rigid_body: RigidBody::Static,
             collider: Collider::circle(radius),
+            collision_layers: CollisionLayers::from_bits(0b0001, 0b1000),
         }
     }
 }
-// Ennemy,
-// StateScoped(GameState::Play),
-// kind,
-// Team::Enemy,
-// Targetable,
-// ColorMesh2dBundle {
-//     mesh: meshes.add(Circle::new(radius)).into(),
-//     material: materials.add(Color::linear_rgb(0.6, 0.2, 0.1)),
-//     transform: Transform::from_xyz(300.0, 100.0, 0.0),
-//     ..default()
-// },
-// RigidBody::Static,
-// Collider::circle(radius),

@@ -82,3 +82,21 @@ pub fn spawn_walls(
         Collider::rectangle(level_width + WALL_WIDTH * 2.0, WALL_WIDTH),
     ));
 }
+
+pub fn spawn_floor(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let handle =
+        asset_server.load("kennys-sokoban/kenney_sokoban-pack/PNG/Retina/Ground/ground_04.png");
+    for x in 0..10 {
+        for y in 0..6 {
+            commands.spawn(SpriteBundle {
+                texture: handle.clone(),
+                transform: Transform::from_xyz(
+                    x as f32 * 100.0 - 450.0,
+                    y as f32 * 100.0 - 250.0,
+                    -1.0,
+                ),
+                ..default()
+            });
+        }
+    }
+}

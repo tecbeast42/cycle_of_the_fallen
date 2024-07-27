@@ -8,7 +8,6 @@ pub enum GameState {
     LevelSelection,
     CharacterSelection,
     Play,
-    GameOver,
 }
 
 /// holds the current level if there is one
@@ -61,13 +60,19 @@ impl Default for Levels {
                 id: 1,
                 unlocked: true,
                 cycles: None,
-                characters: vec![Class::Knight, Class::Ranger, Class::Wizard], // Temporarly all classes for test purposes
+                characters: vec![Class::Knight],
             },
             Level {
                 id: 2,
                 unlocked: true,
                 cycles: None,
-                characters: vec![Class::Knight, Class::Wizard],
+                characters: vec![Class::Knight],
+            },
+            Level {
+                id: 3,
+                unlocked: true,
+                cycles: None,
+                characters: vec![Class::Wizard, Class::Knight],
             },
         ])
     }
@@ -79,20 +84,6 @@ impl Plugin for GamePlugin {
         app.init_state::<GameState>()
             .enable_state_scoped_entities::<GameState>()
             .init_resource::<CurrentLevel>()
-            .init_resource::<Levels>()
-            .add_systems(
-                Update,
-                debug_game_over.run_if(|keyboard_input: Res<ButtonInput<KeyCode>>| {
-                    keyboard_input.just_pressed(KeyCode::KeyK)
-                }),
-            );
-    }
-}
-
-fn debug_game_over(state: Res<State<GameState>>, mut next_state: ResMut<NextState<GameState>>) {
-    if state.get() == &GameState::GameOver {
-        next_state.set(GameState::LevelSelection);
-    } else if state.get() == &GameState::Play {
-        next_state.set(GameState::GameOver);
+            .init_resource::<Levels>();
     }
 }

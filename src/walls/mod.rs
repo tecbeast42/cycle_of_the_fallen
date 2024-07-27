@@ -15,6 +15,6 @@ pub struct WallPlugin;
 
 impl Plugin for WallPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Play), spawn_walls);
+        app.add_systems(OnEnter(GameState::Play), (spawn_walls, spawn_floor));
     }
 }

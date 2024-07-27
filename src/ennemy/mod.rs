@@ -9,7 +9,6 @@ use crate::game::GameState;
 pub mod prelude {
     pub use super::data::*;
     pub use super::EnnemyPlugin;
-    use crate::player::prelude::*;
 }
 
 pub struct EnnemyPlugin;

@@ -7,10 +7,10 @@
 mod character;
 mod ennemy;
 mod game;
-mod level_history;
 mod levels;
 mod player;
 mod walls;
+mod replay;
 
 use avian2d::prelude::*;
 use bevy::asset::AssetMetaCheck;
@@ -18,7 +18,6 @@ use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use character::CharactersPlugin;
 use ennemy::prelude::*;
-use level_history::prelude::*;
 use player::prelude::*;
 use walls::prelude::*;
 
@@ -38,7 +37,7 @@ fn main() {
                     ..default()
                 })
                 .set(LogPlugin {
-                    filter: "info,cycle_of_the_fallen=debug".to_string(),
+                    filter: "info,cycle_of_the_fallen=debug,wgpu=error".to_string(),
                     ..default()
                 }),
             PhysicsPlugins::default().with_length_unit(PLAYER_RADIUS),
@@ -49,7 +48,7 @@ fn main() {
         .add_plugins(levels::LevelsPlugin)
         .add_plugins(game::GamePlugin)
         .add_plugins(CharactersPlugin)
-        .add_plugins(LevelHistoryPlugin)
+        .add_plugins(replay::ReplayPlugin)
         .add_systems(Startup, setup)
         .run();
 }

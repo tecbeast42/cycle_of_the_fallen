@@ -1,5 +1,4 @@
 use crate::game::{CurrentLevel, GameState, Levels};
-use crate::level_history::prelude::*;
 use crate::{character::prelude::SelectedCharacter, Ennemy};
 
 use super::prelude::*;
@@ -22,8 +21,7 @@ pub fn spawn_player(
             StateScoped(GameState::Play),
             Player,
             PlayerBundle::new(
-                PlayerType::Alive,
-                selected_character.0.clone(),
+                selected_character.0,
                 &asset_server,
                 &mut texture_atlas_layouts,
             ),
@@ -41,26 +39,19 @@ pub fn spawn_player(
         });
 }
 
-pub fn despawn_player(mut commands: Commands, query_player: Query<Entity, With<Player>>) {
-    for entity in query_player.iter() {
-        commands.entity(entity).despawn_recursive();
-    }
-}
-
 /// Moves the player around.
 ///
-/// Use ZQSD (or WASD) to move the player around.
-pub fn move_player_write(
+/// Use WASD to move the player around.
+pub fn move_player(
     time: Res<Time>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut player: Query<Entity, With<Player>>,
-    mut events: EventWriter<PlayerMoveEvent>,
+    mut player: Query<(&mut LinearVelocity, &mut Animation, &mut TextureAtlas), With<Player>>,
 ) {
     let delta_time = time.delta_seconds();
 
     let mut direction = Vec2::ZERO;
 
-    for entity in &mut player {
+    for (mut velocity, mut animation, mut atlas) in &mut player {
         if keyboard_input.pressed(KeyCode::KeyW) {
             direction.y += 1.0;
         }
@@ -75,47 +66,29 @@ pub fn move_player_write(
         }
 
         direction = direction.normalize_or_zero() * delta_time * 10000.0;
+        animation.travelled += direction.length();
 
-        events.send(PlayerMoveEvent {
-            delta: direction,
-            source: EventSource::Input,
-            entity,
-        });
-    }
-}
-
-pub fn move_player_read(
-    mut player: Query<(&mut LinearVelocity, &mut Animation, &mut TextureAtlas)>,
-    mut events: EventReader<PlayerMoveEvent>,
-) {
-    for event in events.read() {
-        if let Ok((mut velocity, mut animation, mut atlas)) = player.get_mut(event.entity) {
-            let travelled = Vec2::new(event.delta.x, event.delta.y).length();
-            animation.travelled += travelled;
-
-            if animation.travelled >= 800.0 {
-                atlas.index = if atlas.index == animation.indices.1 {
-                    animation.indices.0
-                } else {
-                    atlas.index + 1
-                };
-                animation.travelled -= 800.0
-            }
-
-            velocity.x = event.delta.x;
-            velocity.y = event.delta.y;
+        if animation.travelled >= 800.0 {
+            atlas.index = if atlas.index == animation.indices.1 {
+                animation.indices.0
+            } else {
+                atlas.index + 1
+            };
+            animation.travelled -= 800.0
         }
+
+        velocity.x = direction.x;
+        velocity.y = direction.y;
     }
 }
 
 /// Rotate the player around himself/herself.
 ///
 /// Move the mouse around the player to make him rotate.
-pub fn rotate_player_write(
-    player: Query<(Entity, &Transform), With<Player>>,
+pub fn rotate_player(
+    mut player: Query<&mut Transform, With<Player>>,
     query_window: Query<&Window, With<PrimaryWindow>>,
     query_camera: Query<(&Camera, &GlobalTransform)>,
-    mut events: EventWriter<PlayerRotateEvent>,
 ) {
     let (camera, camera_transform) = query_camera.single();
     let window = query_window.single();
@@ -127,27 +100,11 @@ pub fn rotate_player_write(
         .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
         .map(|ray| ray.origin.truncate())
     {
-        if let Ok((entity, transform)) = player.get_single() {
+        if let Ok(mut transform) = player.get_single_mut() {
             let player_position = transform.translation.truncate();
             let direction = cursor_position - player_position;
             let angle = direction.y.atan2(direction.x);
-
-            events.send(PlayerRotateEvent {
-                to: Quat::from_rotation_z(angle),
-                source: EventSource::Input,
-                entity,
-            });
-        }
-    }
-}
-
-pub fn rotate_player_read(
-    mut player: Query<&mut Transform, With<Player>>,
-    mut events: EventReader<PlayerRotateEvent>,
-) {
-    for event in events.read() {
-        if let Ok(mut transform) = player.get_mut(event.entity) {
-            transform.rotation = event.to;
+            transform.rotation = Quat::from_rotation_z(angle);
         }
     }
 }
@@ -155,13 +112,15 @@ pub fn rotate_player_read(
 /// Attacks with player weapon.
 ///
 /// Use left mouse click to perform an attack with the player's weapon.
-pub fn player_attack_write(
-    mut player: Query<(Entity, &mut PlayerStats), With<Player>>,
+pub fn player_attack(
+    mut player: Query<(&Transform, &mut PlayerStats), With<Player>>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
     mouse: Res<ButtonInput<MouseButton>>,
     time: Res<Time>,
-    mut events: EventWriter<PlayerAttackEvent>,
 ) {
-    let Ok((entity, mut stats)) = player.get_single_mut() else {
+    let Ok((transform, mut stats)) = player.get_single_mut() else {
         return;
     };
     stats.attack.attack_speed.tick(time.delta());
@@ -170,54 +129,37 @@ pub fn player_attack_write(
         return;
     }
     if stats.attack.attack_speed.finished() {
-        events.send(PlayerAttackEvent {
-            entity,
-            source: EventSource::Input,
-        });
+        let attack = &stats.attack;
+
+        // Projectile size
+        let width = attack.size.x;
+        let height = attack.size.y;
+
+        // Projectile transform
+        let position =
+            transform.translation + transform.rotation * Vec3::X * (PLAYER_RADIUS + 10.0);
+        let rotation = transform.rotation;
+
+        // Projectile movement
+        let direction = position - transform.translation;
+        let speed = attack.speed;
+        let velocity = direction * speed;
+
+        commands.spawn((
+            StateScoped(GameState::Play),
+            AttackProjectile::new(transform.translation.truncate(), attack.range),
+            ColorMesh2dBundle {
+                mesh: meshes.add(Rectangle::new(height, width)).into(),
+                material: materials.add(Color::linear_rgb(0.8, 0.6, 0.8)),
+                transform: Transform::from_translation(position).with_rotation(rotation),
+                ..default()
+            },
+            RigidBody::Dynamic,
+            LinearVelocity(velocity.truncate()),
+            Collider::rectangle(height, width),
+            CollisionLayers::from_bits(0b1000, 0b0001),
+        ));
         stats.attack.attack_speed.reset();
-    }
-}
-
-pub fn player_attack_read(
-    mut commands: Commands,
-    player: Query<(&Transform, &PlayerStats)>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut events: EventReader<PlayerAttackEvent>,
-) {
-    for event in events.read() {
-        if let Ok((transform, stats)) = player.get(event.entity) {
-            let attack = &stats.attack;
-
-            // Projectile size
-            let width = attack.size.x;
-            let height = attack.size.y;
-
-            // Projectile transform
-            let position =
-                transform.translation + transform.rotation * Vec3::X * (PLAYER_RADIUS + 10.0);
-            let rotation = transform.rotation;
-
-            // Projectile movement
-            let direction = position - transform.translation;
-            let speed = attack.speed;
-            let velocity = direction * speed;
-
-            commands.spawn((
-                StateScoped(GameState::Play),
-                AttackProjectile::new(transform.translation.truncate(), attack.range),
-                ColorMesh2dBundle {
-                    mesh: meshes.add(Rectangle::new(height, width)).into(),
-                    material: materials.add(Color::linear_rgb(0.8, 0.6, 0.8)),
-                    transform: Transform::from_translation(position).with_rotation(rotation),
-                    ..default()
-                },
-                Team::Player,
-                RigidBody::Dynamic,
-                LinearVelocity(velocity.truncate()),
-                Collider::rectangle(height, width),
-            ));
-        }
     }
 }
 
@@ -241,56 +183,43 @@ pub fn despawn_out_of_range_projectiles(
 pub fn handle_projectile_colissions(
     mut commands: Commands,
     projectiles: Query<(Entity, &CollidingEntities), With<AttackProjectile>>,
-    ennemy_query: Query<(&Team, Option<&PlayerType>)>,
-    mut player_killed_event: EventWriter<PlayerKilledEvent>,
+    ennemy_query: Query<(), With<Ennemy>>,
+    player_query: Query<&Class, With<Player>>,
 ) {
     for (entity, colliding_entities) in projectiles.iter() {
         for colliding_entity in colliding_entities.iter() {
-            match ennemy_query.get(*colliding_entity) {
-                Ok((Team::Player, Some(PlayerType::Alive))) => {
-                    player_killed_event.send(PlayerKilledEvent {
-                        entity: *colliding_entity,
-                        source: EventSource::Input,
-                    });
-                }
-                Ok(_) => {
-                    commands.entity(*colliding_entity).despawn_recursive();
-                    debug!("killed enemy {colliding_entity:?}");
-                }
-                _ => (),
+            if ennemy_query.get(*colliding_entity).is_ok() {
+                debug!(
+                    "Despawning projectile and enemy on collsion {entity:?} {colliding_entity:?}"
+                );
+                commands.entity(*colliding_entity).despawn_recursive();
+                commands.entity(entity).despawn_recursive();
             }
-        }
-
-        if colliding_entities.len() > 0 {
-            // despawn the projectile
-            commands.entity(entity).despawn();
-            debug!("Despawning projectile on collsion {entity:?}");
+            if let Ok(class) = player_query.get(*colliding_entity) {
+                debug!(
+                    "Despawning projectile and player on collsion {entity:?} {colliding_entity:?}"
+                );
+                commands.entity(*colliding_entity).despawn_recursive();
+                commands.entity(entity).despawn_recursive();
+            };
         }
     }
 }
 
-pub fn player_killed_read(
-    mut commands: Commands,
-    mut player_killed_event: EventReader<PlayerKilledEvent>,
-    mut save_player_ghost_event: EventWriter<SavePlayerGhostEvent>,
-    player_query: Query<(&PlayerType, &Class)>,
-    mut game_state: ResMut<NextState<GameState>>,
-) {
-    for e in player_killed_event.read() {
-        if let Ok((PlayerType::Alive, class)) = player_query.get(e.entity) {
-            game_state.set(GameState::CharacterSelection);
-            save_player_ghost_event.send(SavePlayerGhostEvent { class: *class });
-        }
-        commands.entity(e.entity).despawn_recursive();
+fn player_died(mut removals: RemovedComponents<Player>, mut commands: Commands) {
+    for entity in removals.read() {
+        // create a new ghost
+        // start replay from beginnig
     }
 }
 
+/// TODO reenable score recodring
 pub fn check_for_level_complete(
     query: Query<(), With<Ennemy>>,
     mut levels: ResMut<Levels>,
     mut current_level: ResMut<CurrentLevel>,
     mut game_state: ResMut<NextState<GameState>>,
-    player_ghost_list: Res<PlayerGhostList>,
+    // player_ghost_list: Res<PlayerGhostList>,
 ) {
     if query.iter().len() == 0 {
         let Some(level) = &current_level.0 else {
@@ -304,7 +233,7 @@ pub fn check_for_level_complete(
             levels.unlock_level(level.id + 1);
         }
 
-        levels.set_next_score(level.id, player_ghost_list.ghosts.len() + 1);
+        // levels.set_next_score(level.id, player_ghost_list.ghosts.len() + 1);
         current_level.0 = None;
         game_state.set(GameState::LevelSelection);
     }

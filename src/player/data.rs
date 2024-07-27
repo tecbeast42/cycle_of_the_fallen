@@ -9,28 +9,20 @@ pub const PLAYER_RADIUS: f32 = 15.0;
 #[derive(Component, Debug)]
 pub struct Player;
 
+/// Marker component of the a ghost that is replayed.
+#[derive(Component, Debug)]
+pub struct Ghost;
+
 /// The different classes of the game.
 ///
 /// - The knight have lot of health and does damage with melee attacks.
 /// - The ranger shoots from long range but with low damage.
 /// - The wizard inflicts hight damages at medium range but is very weak.
-#[derive(Component, Clone, Debug, Copy, PartialEq, Eq)]
+#[derive(Component, Clone, Debug, Copy, PartialEq, Eq, Hash)]
 pub enum Class {
     Knight,
     Ranger,
     Wizard,
-}
-
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Team {
-    Player,
-    Enemy,
-}
-
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PlayerType {
-    Alive,
-    Ghost,
 }
 
 // Marker component indicating that the entity can be targeted
@@ -145,14 +137,12 @@ pub struct PlayerBundle {
     pub animation: Animation,
     pub rigid_body: RigidBody,
     pub collider: Collider,
-    pub player_type: PlayerType,
-    pub team: Team,
     pub targetable: Targetable,
+    pub collision_layers: CollisionLayers,
 }
 
 impl PlayerBundle {
     pub fn new(
-        player_type: PlayerType,
         class: Class,
         asset_server: &Res<AssetServer>,
         texture_atlas_layouts: &mut ResMut<Assets<TextureAtlasLayout>>,
@@ -184,27 +174,8 @@ impl PlayerBundle {
             class,
             rigid_body: RigidBody::Dynamic,
             collider: Collider::circle(PLAYER_RADIUS),
-            player_type,
-            team: Team::Player,
             targetable: Targetable,
+            collision_layers: CollisionLayers::from_bits(0b0100, 0b0110),
         }
     }
 }
-
-// PlayerStats::new(class),
-// SpriteBundle {
-//     texture,
-//     transform: Transform::from_xyz(-400.0, 0.0, 0.0)
-//         .with_scale(Vec3::new(0.3, 0.3, 0.3)),
-//     ..default()
-// },
-// TextureAtlas {
-//     layout: texture_atlas_layout,
-//     index: 0,
-// },
-// Animation {
-//     indices: (0, 3),
-//     travelled: 0.0,
-// },
-// RigidBody::Dynamic,
-// Collider::circle(PLAYER_RADIUS),

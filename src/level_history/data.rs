@@ -1,4 +1,4 @@
-use crate::player::prelude::PlayerStats;
+use crate::player::prelude::*;
 use bevy::prelude::*;
 
 #[derive(Resource)]
@@ -12,7 +12,7 @@ pub struct Ghost;
 
 pub struct PlayerGhost {
     pub entity: Option<Entity>,
-    pub stats: PlayerStats,
+    pub class: Class,
 }
 
 #[derive(Resource, Default)]
@@ -62,5 +62,5 @@ pub trait EventRecordDebug {
 }
 
 /// Ghost index identifier
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Component, Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct GhostIdentifier(pub usize);

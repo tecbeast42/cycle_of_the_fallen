@@ -23,6 +23,7 @@ impl Plugin for PlayerPlugin {
         app.add_event::<PlayerMoveEvent>()
             .add_event::<PlayerRotateEvent>()
             .add_event::<PlayerAttackEvent>()
+            .add_event::<PlayerKilledEvent>()
             .add_systems(OnEnter(GameState::Play), spawn_player)
             .add_systems(
                 OnEnter(GameState::GameOver),
@@ -39,12 +40,12 @@ impl Plugin for PlayerPlugin {
                     rotate_player_read,
                     player_attack_write,
                     player_attack_read,
+                    player_killed_read,
                     check_for_level_complete,
                     despawn_out_of_range_projectiles,
                 )
-                    .chain()
                     .run_if(in_state(GameState::Play)),
             )
-            .add_systems(PostProcessCollisions, despawn_collided_projectiles);
+            .add_systems(PostProcessCollisions, handle_projectile_colissions);
     }
 }

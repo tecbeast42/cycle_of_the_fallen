@@ -4,6 +4,7 @@ use crate::{
 };
 
 use super::prelude::*;
+use crate::player::prelude::*;
 use avian2d::prelude::*;
 use bevy::{color::palettes::tailwind, prelude::*};
 
@@ -25,36 +26,18 @@ pub fn spawn_ennemies(
             let kind = EnnemyKind::Dummy;
             let radius = kind.radius();
             commands.spawn((
-                Ennemy,
                 StateScoped(GameState::Play),
-                kind,
-                ColorMesh2dBundle {
-                    mesh: meshes.add(Circle::new(radius)).into(),
-                    material: materials.add(Color::linear_rgb(0.6, 0.2, 0.1)),
-                    transform: Transform::from_xyz(300.0, 100.0, 0.0),
-                    ..default()
-                },
-                RigidBody::Static,
-                Collider::circle(radius),
+                EnemyBundle::new(kind, radius, &mut meshes, &mut materials),
             ));
         }
         2 => {
             let kind = EnnemyKind::Turret;
             let radius = kind.radius();
             commands.spawn((
-                Ennemy,
                 StateScoped(GameState::Play),
-                AttackSpeed::new(Timer::from_seconds(2.0, TimerMode::Once)),
                 AlwaysAttack,
-                EnnemyKind::Turret,
-                ColorMesh2dBundle {
-                    mesh: meshes.add(Circle::new(radius)).into(),
-                    material: materials.add(Color::linear_rgb(0.6, 0.2, 0.1)),
-                    transform: Transform::from_xyz(300.0, 100.0, 0.0),
-                    ..default()
-                },
-                RigidBody::Static,
-                Collider::circle(radius),
+                AttackSpeed::from_type(AttackSpeedType::Regular),
+                EnemyBundle::new(kind, radius, &mut meshes, &mut materials),
             ));
         }
         _ => {}
@@ -102,6 +85,8 @@ pub fn execute_always_attack(
             let velocity = direction * 200.0;
             // attack
             commands.spawn((
+                StateScoped(GameState::Play),
+                Team::Enemy,
                 AttackProjectile::new(projectile_transform.translation.truncate(), 3000.0),
                 ColorMesh2dBundle {
                     mesh: meshes.add(Circle::new(7.0)).into(),

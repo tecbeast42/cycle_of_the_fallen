@@ -1,3 +1,4 @@
+use avian2d::prelude::*;
 use bevy::prelude::*;
 
 pub const PLAYER_RADIUS: f32 = 15.0;
@@ -13,12 +14,28 @@ pub struct Player;
 /// - The knight have lot of health and does damage with melee attacks.
 /// - The ranger shoots from long range but with low damage.
 /// - The wizard inflicts hight damages at medium range but is very weak.
-#[derive(Clone, Debug)]
+#[derive(Component, Clone, Debug, Copy, PartialEq, Eq)]
 pub enum Class {
     Knight,
     Ranger,
     Wizard,
 }
+
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Team {
+    Player,
+    Enemy,
+}
+
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PlayerType {
+    Alive,
+    Ghost,
+}
+
+// Marker component indicating that the entity can be targeted
+#[derive(Component, Debug, Clone, Copy)]
+pub struct Targetable;
 
 /// The different weapons of the game.
 ///
@@ -118,3 +135,76 @@ pub struct Animation {
     pub indices: (usize, usize),
     pub travelled: f32,
 }
+
+#[derive(Bundle, Debug)]
+pub struct PlayerBundle {
+    pub class: Class,
+    pub player_stats: PlayerStats,
+    pub sprite_bundle: SpriteBundle,
+    pub texture_atlas: TextureAtlas,
+    pub animation: Animation,
+    pub rigid_body: RigidBody,
+    pub collider: Collider,
+    pub player_type: PlayerType,
+    pub team: Team,
+    pub targetable: Targetable,
+}
+
+impl PlayerBundle {
+    pub fn new(
+        player_type: PlayerType,
+        class: Class,
+        asset_server: &Res<AssetServer>,
+        texture_atlas_layouts: &mut ResMut<Assets<TextureAtlasLayout>>,
+    ) -> Self {
+        let texture = match class {
+            Class::Knight => asset_server.load("knight.png"),
+            Class::Ranger => asset_server.load("ranger.png"),
+            Class::Wizard => asset_server.load("wizard.png"),
+        };
+        let layout = TextureAtlasLayout::from_grid(UVec2::splat(256), 4, 1, None, None);
+        let texture_atlas_layout = texture_atlas_layouts.add(layout);
+
+        PlayerBundle {
+            player_stats: PlayerStats::new(class),
+            sprite_bundle: SpriteBundle {
+                texture,
+                transform: Transform::from_xyz(-400.0, 0.0, 0.0)
+                    .with_scale(Vec3::new(0.3, 0.3, 0.3)),
+                ..default()
+            },
+            texture_atlas: TextureAtlas {
+                layout: texture_atlas_layout,
+                index: 0,
+            },
+            animation: Animation {
+                indices: (0, 3),
+                travelled: 0.0,
+            },
+            class,
+            rigid_body: RigidBody::Dynamic,
+            collider: Collider::circle(PLAYER_RADIUS),
+            player_type,
+            team: Team::Player,
+            targetable: Targetable,
+        }
+    }
+}
+
+// PlayerStats::new(class),
+// SpriteBundle {
+//     texture,
+//     transform: Transform::from_xyz(-400.0, 0.0, 0.0)
+//         .with_scale(Vec3::new(0.3, 0.3, 0.3)),
+//     ..default()
+// },
+// TextureAtlas {
+//     layout: texture_atlas_layout,
+//     index: 0,
+// },
+// Animation {
+//     indices: (0, 3),
+//     travelled: 0.0,
+// },
+// RigidBody::Dynamic,
+// Collider::circle(PLAYER_RADIUS),

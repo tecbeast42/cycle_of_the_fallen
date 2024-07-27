@@ -17,37 +17,16 @@ pub fn spawn_player(
     asset_server: Res<AssetServer>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    let class = selected_character.0.clone();
-
-    let texture = match class {
-        Class::Knight => asset_server.load("knight.png"),
-        Class::Ranger => asset_server.load("ranger.png"),
-        Class::Wizard => asset_server.load("wizard.png"),
-    };
-    let layout = TextureAtlasLayout::from_grid(UVec2::splat(256), 4, 1, None, None);
-    let texture_atlas_layout = texture_atlas_layouts.add(layout);
-
     commands
         .spawn((
-            Player,
             StateScoped(GameState::Play),
-            PlayerStats::new(class),
-            SpriteBundle {
-                texture,
-                transform: Transform::from_xyz(-400.0, 0.0, 0.0)
-                    .with_scale(Vec3::new(0.3, 0.3, 0.3)),
-                ..default()
-            },
-            TextureAtlas {
-                layout: texture_atlas_layout,
-                index: 0,
-            },
-            Animation {
-                indices: (0, 3),
-                travelled: 0.0,
-            },
-            RigidBody::Dynamic,
-            Collider::circle(PLAYER_RADIUS),
+            Player,
+            PlayerBundle::new(
+                PlayerType::Alive,
+                selected_character.0.clone(),
+                &asset_server,
+                &mut texture_atlas_layouts,
+            ),
         ))
         // This is temporary it allows to see were is the player facing
         // (Either with delete this, or we use it to insert a sprite for the weapon
@@ -225,6 +204,7 @@ pub fn player_attack_read(
             let velocity = direction * speed;
 
             commands.spawn((
+                StateScoped(GameState::Play),
                 AttackProjectile::new(transform.translation.truncate(), attack.range),
                 ColorMesh2dBundle {
                     mesh: meshes.add(Rectangle::new(height, width)).into(),
@@ -232,6 +212,7 @@ pub fn player_attack_read(
                     transform: Transform::from_translation(position).with_rotation(rotation),
                     ..default()
                 },
+                Team::Player,
                 RigidBody::Dynamic,
                 LinearVelocity(velocity.truncate()),
                 Collider::rectangle(height, width),
@@ -257,16 +238,26 @@ pub fn despawn_out_of_range_projectiles(
     }
 }
 
-pub fn despawn_collided_projectiles(
+pub fn handle_projectile_colissions(
     mut commands: Commands,
     projectiles: Query<(Entity, &CollidingEntities), With<AttackProjectile>>,
-    ennemy_query: Query<(), With<Ennemy>>,
+    ennemy_query: Query<(&Team, Option<&PlayerType>)>,
+    mut player_killed_event: EventWriter<PlayerKilledEvent>,
 ) {
     for (entity, colliding_entities) in projectiles.iter() {
         for colliding_entity in colliding_entities.iter() {
-            if ennemy_query.get(*colliding_entity).is_ok() {
-                commands.entity(*colliding_entity).despawn_recursive();
-                debug!("Despawning enemy {colliding_entity:?}");
+            match ennemy_query.get(*colliding_entity) {
+                Ok((Team::Player, Some(PlayerType::Alive))) => {
+                    player_killed_event.send(PlayerKilledEvent {
+                        entity: *colliding_entity,
+                        source: EventSource::Input,
+                    });
+                }
+                Ok(_) => {
+                    commands.entity(*colliding_entity).despawn_recursive();
+                    debug!("killed enemy {colliding_entity:?}");
+                }
+                _ => (),
             }
         }
 
@@ -275,6 +266,22 @@ pub fn despawn_collided_projectiles(
             commands.entity(entity).despawn();
             debug!("Despawning projectile on collsion {entity:?}");
         }
+    }
+}
+
+pub fn player_killed_read(
+    mut commands: Commands,
+    mut player_killed_event: EventReader<PlayerKilledEvent>,
+    mut save_player_ghost_event: EventWriter<SavePlayerGhostEvent>,
+    player_query: Query<(&PlayerType, &Class)>,
+    mut game_state: ResMut<NextState<GameState>>,
+) {
+    for e in player_killed_event.read() {
+        if let Ok((PlayerType::Alive, class)) = player_query.get(e.entity) {
+            game_state.set(GameState::CharacterSelection);
+            save_player_ghost_event.send(SavePlayerGhostEvent { class: *class });
+        }
+        commands.entity(e.entity).despawn_recursive();
     }
 }
 

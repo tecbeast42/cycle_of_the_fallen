@@ -1,8 +1,10 @@
 mod data;
+mod events;
 mod systems;
 
 use bevy::prelude::*;
 use data::*;
+use events::*;
 use systems::*;
 
 use crate::game::CurrentLevel;
@@ -11,6 +13,7 @@ use crate::player::prelude::*;
 
 pub mod prelude {
     pub use super::data::*;
+    pub use super::events::*;
     pub use super::LevelHistoryPlugin;
 }
 
@@ -23,6 +26,7 @@ pub enum LevelHistorySet {
     Clear,
     Debug,
     SavePlayer,
+    SpawnGhost,
 }
 
 fn level_changed(current_level: Res<CurrentLevel>) -> bool {
@@ -31,7 +35,8 @@ fn level_changed(current_level: Res<CurrentLevel>) -> bool {
 
 impl Plugin for LevelHistoryPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<LevelStartTime>()
+        app.add_event::<SavePlayerGhostEvent>()
+            .init_resource::<LevelStartTime>()
             .init_resource::<PlayerGhostList>()
             .configure_sets(
                 Update,
@@ -39,6 +44,7 @@ impl Plugin for LevelHistoryPlugin {
                     .after(LevelHistorySet::Record)
                     .run_if(level_changed),
             )
+            .configure_sets(OnEnter(GameState::LevelSelection), LevelHistorySet::Clear)
             .configure_sets(
                 Update,
                 (
@@ -51,13 +57,16 @@ impl Plugin for LevelHistoryPlugin {
             )
             .add_systems(
                 OnEnter(GameState::Play),
-                (spawn_ghosts, reset_level_start_time),
+                (
+                    spawn_ghosts.in_set(LevelHistorySet::SpawnGhost),
+                    reset_level_start_time,
+                ),
             )
-            .add_systems(OnExit(GameState::Play), ghost_despawn)
             .add_systems(
                 OnEnter(GameState::GameOver),
                 save_player_ghost.in_set(LevelHistorySet::SavePlayer),
             )
+            .add_systems(Update, (save_player_ghost, clean_ghost_list))
             .init_resource::<LevelHistory<PlayerMoveEvent>>()
             .add_systems(
                 Update,

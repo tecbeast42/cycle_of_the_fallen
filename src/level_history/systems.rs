@@ -161,26 +161,26 @@ pub fn spawn_ghosts(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut ghost_list: ResMut<PlayerGhostList>,
+    asset_server: Res<AssetServer>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
     let mut count = 0;
     for g in ghost_list.ghosts.iter_mut() {
-        count += 1;
-        if let Some(e) = g.entity {
-            warn!("Ghost {:?} already exists", e);
-            commands.entity(e).despawn_recursive();
+        if let Some(e) = g.entity.and_then(|e| commands.get_entity(e)) {
+            warn!("Ghost already exists");
+            e.despawn_recursive();
         }
         let entity = commands
             .spawn((
                 Ghost,
-                g.stats.clone(),
-                ColorMesh2dBundle {
-                    mesh: meshes.add(Circle::new(PLAYER_RADIUS)).into(),
-                    material: materials.add(Color::linear_rgb(0.0, 0.0, 1.0)),
-                    transform: Transform::from_xyz(-400.0, 0.0, 0.0),
-                    ..default()
-                },
-                RigidBody::Dynamic,
-                Collider::circle(PLAYER_RADIUS),
+                GhostIdentifier(count),
+                StateScoped(GameState::Play),
+                PlayerBundle::new(
+                    PlayerType::Ghost,
+                    g.class,
+                    &asset_server,
+                    &mut texture_atlas_layouts,
+                ),
             ))
             // This is temporary it allows to see were is the player facing
             // (Either with delete this, or we use it to insert a sprite for the weapon
@@ -196,6 +196,7 @@ pub fn spawn_ghosts(
             .id();
 
         g.entity = Some(entity);
+        count += 1;
     }
     if count > 0 {
         info!("Spawned {} ghosts", count);
@@ -204,25 +205,27 @@ pub fn spawn_ghosts(
     }
 }
 
-pub fn ghost_despawn(mut commands: Commands, mut ghost_list: ResMut<PlayerGhostList>) {
-    for g in ghost_list.ghosts.iter_mut() {
-        if let Some(e) = g.entity {
-            commands.entity(e).despawn_recursive();
-            g.entity = None;
+pub fn clean_ghost_list(
+    mut ghost_list: ResMut<PlayerGhostList>,
+    mut ghost_id_removed: RemovedComponents<GhostIdentifier>,
+) {
+    for entity in ghost_id_removed.read() {
+        for e in ghost_list.ghosts.iter_mut() {
+            if e.entity == Some(entity) {
+                e.entity = None;
+            }
         }
     }
 }
 
 pub fn save_player_ghost(
     mut ghost_list: ResMut<PlayerGhostList>,
-    query_player: Query<&PlayerStats, With<Player>>,
+    mut save_event: EventReader<SavePlayerGhostEvent>,
 ) {
-    if let Ok(player_stats) = query_player.get_single() {
+    for e in save_event.read() {
         ghost_list.ghosts.push(PlayerGhost {
-            stats: player_stats.clone(),
+            class: e.class,
             entity: None,
         });
-    } else {
-        error!("No player to save");
     }
 }

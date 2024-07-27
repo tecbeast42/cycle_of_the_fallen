@@ -1,6 +1,12 @@
 use std::time::Duration;
 
+use crate::player::prelude::*;
+use avian2d::prelude::*;
 use bevy::prelude::*;
+
+pub enum AttackSpeedType {
+    Regular,
+}
 
 /// Marker component of the enemies.
 ///
@@ -45,9 +51,64 @@ impl AttackSpeed {
     pub fn finished(&self) -> bool {
         self.0.finished()
     }
+    pub fn from_type(attack_type: AttackSpeedType) -> Self {
+        let time = match attack_type {
+            AttackSpeedType::Regular => 2.0,
+        };
+
+        Self::new(Timer::from_seconds(time, TimerMode::Once))
+    }
 }
 
 /// Indicate that this [`Ennemy`] will always
 /// attack the player no mather what
 #[derive(Component)]
 pub struct AlwaysAttack;
+
+#[derive(Bundle)]
+pub struct EnemyBundle {
+    pub enemy: Ennemy,
+    pub kind: EnnemyKind,
+    pub team: Team,
+    pub targetable: Targetable,
+    pub mesh: ColorMesh2dBundle,
+    pub rigid_body: RigidBody,
+    pub collider: Collider,
+}
+
+impl EnemyBundle {
+    pub fn new(
+        kind: EnnemyKind,
+        radius: f32,
+        meshes: &mut ResMut<Assets<Mesh>>,
+        materials: &mut ResMut<Assets<ColorMaterial>>,
+    ) -> Self {
+        Self {
+            enemy: Ennemy,
+            kind,
+            team: Team::Enemy,
+            targetable: Targetable,
+            mesh: ColorMesh2dBundle {
+                mesh: meshes.add(Circle::new(radius)).into(),
+                material: materials.add(Color::linear_rgb(0.6, 0.2, 0.1)),
+                transform: Transform::from_xyz(300.0, 100.0, 0.0),
+                ..default()
+            },
+            rigid_body: RigidBody::Static,
+            collider: Collider::circle(radius),
+        }
+    }
+}
+// Ennemy,
+// StateScoped(GameState::Play),
+// kind,
+// Team::Enemy,
+// Targetable,
+// ColorMesh2dBundle {
+//     mesh: meshes.add(Circle::new(radius)).into(),
+//     material: materials.add(Color::linear_rgb(0.6, 0.2, 0.1)),
+//     transform: Transform::from_xyz(300.0, 100.0, 0.0),
+//     ..default()
+// },
+// RigidBody::Static,
+// Collider::circle(radius),

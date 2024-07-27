@@ -1,6 +1,6 @@
 use crate::{
     game::{CurrentLevel, GameState},
-    AttackProjectile, Ghost, Player,
+    AttackProjectile,
 };
 
 use super::prelude::*;
@@ -53,7 +53,7 @@ pub fn tick_attack_speed(time: Res<Time>, mut query: Query<&mut AttackSpeed, Wit
 
 pub fn execute_always_attack(
     mut ennemy_query: Query<(&mut AttackSpeed, &Transform), (With<Ennemy>, With<AlwaysAttack>)>,
-    player_query: Query<&Transform, Or<(With<Ghost>, With<Player>)>>,
+    player_query: Query<(&Transform, &Team), With<Targetable>>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -67,7 +67,10 @@ pub fn execute_always_attack(
 
         let mut distance: f32 = f32::MAX;
         let mut target: Vec2 = Vec2::ZERO;
-        for player_transform in player_query.iter() {
+        for (player_transform, team) in player_query.iter() {
+            if team != &Team::Enemy {
+                continue;
+            }
             let test_distance = ennemy_tranform
                 .translation
                 .distance_squared(player_transform.translation);
@@ -85,6 +88,7 @@ pub fn execute_always_attack(
             let velocity = direction * 200.0;
             // attack
             commands.spawn((
+                Name::new("Enemy Projectile"),
                 StateScoped(GameState::Play),
                 Team::Enemy,
                 AttackProjectile::new(projectile_transform.translation.truncate(), 3000.0),
@@ -97,6 +101,7 @@ pub fn execute_always_attack(
                 RigidBody::Dynamic,
                 LinearVelocity(velocity),
                 Collider::circle(7.0),
+                get_collision_layers(ENEMY_PROJECTILE_COLLISION_LAYER),
             ));
         }
     }

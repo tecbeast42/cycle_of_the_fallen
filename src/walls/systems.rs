@@ -1,4 +1,4 @@
-use crate::game::GameState;
+use crate::{game::GameState, get_collision_layers, WALL_COLLISION_LAYER};
 
 use super::prelude::*;
 use avian2d::prelude::*;
@@ -17,6 +17,7 @@ pub fn spawn_walls(
 
     // Left wall
     commands.spawn((
+        Name::new("Left Wall"),
         Wall,
         StateScoped(GameState::Play),
         ColorMesh2dBundle {
@@ -29,10 +30,12 @@ pub fn spawn_walls(
         },
         RigidBody::Static,
         Collider::rectangle(WALL_WIDTH, level_height),
+        get_collision_layers(WALL_COLLISION_LAYER),
     ));
 
     // Right wall
     commands.spawn((
+        Name::new("Right Wall"),
         Wall,
         ColorMesh2dBundle {
             mesh: meshes
@@ -44,10 +47,12 @@ pub fn spawn_walls(
         },
         RigidBody::Static,
         Collider::rectangle(WALL_WIDTH, level_height),
+        get_collision_layers(WALL_COLLISION_LAYER),
     ));
 
     // Top wall
     commands.spawn((
+        Name::new("Top Wall"),
         Wall,
         ColorMesh2dBundle {
             mesh: meshes
@@ -62,10 +67,12 @@ pub fn spawn_walls(
         },
         RigidBody::Static,
         Collider::rectangle(level_width + WALL_WIDTH * 2.0, WALL_WIDTH),
+        get_collision_layers(WALL_COLLISION_LAYER),
     ));
 
     // Bottom wall
     commands.spawn((
+        Name::new("Bottom Wall"),
         Wall,
         ColorMesh2dBundle {
             mesh: meshes
@@ -80,5 +87,6 @@ pub fn spawn_walls(
         },
         RigidBody::Static,
         Collider::rectangle(level_width + WALL_WIDTH * 2.0, WALL_WIDTH),
+        get_collision_layers(WALL_COLLISION_LAYER),
     ));
 }

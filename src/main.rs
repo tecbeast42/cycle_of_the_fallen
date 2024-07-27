@@ -5,6 +5,7 @@
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
 
 mod character;
+pub mod collision;
 mod ennemy;
 mod game;
 mod level_history;
@@ -43,6 +44,13 @@ fn main() {
                 }),
             PhysicsPlugins::default().with_length_unit(PLAYER_RADIUS),
         ))
+        .insert_gizmo_config(
+            PhysicsGizmos {
+                aabb_color: Some(Color::WHITE),
+                ..default()
+            },
+            GizmoConfig::default(),
+        )
         .add_plugins(PlayerPlugin)
         .add_plugins(EnnemyPlugin)
         .add_plugins(WallPlugin)
@@ -51,9 +59,16 @@ fn main() {
         .add_plugins(CharactersPlugin)
         .add_plugins(LevelHistoryPlugin)
         .add_systems(Startup, setup)
+        .add_systems(Update, debug)
         .run();
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn((Camera2dBundle::default(), Name::new("Camera")));
+}
+
+pub fn debug(colliders: Query<Option<&Team>, With<Collider>>) {
+    for collider in colliders.iter() {
+        info!("collider: {:?}", collider);
+    }
 }

@@ -23,7 +23,7 @@ pub fn spawn_player(
             Player,
             PlayerBundle::new(
                 PlayerType::Alive,
-                selected_character.0.clone(),
+                selected_character.0,
                 &asset_server,
                 &mut texture_atlas_layouts,
             ),
@@ -204,6 +204,7 @@ pub fn player_attack_read(
             let velocity = direction * speed;
 
             commands.spawn((
+                Name::new("Player Projectile"),
                 StateScoped(GameState::Play),
                 AttackProjectile::new(transform.translation.truncate(), attack.range),
                 ColorMesh2dBundle {
@@ -216,6 +217,7 @@ pub fn player_attack_read(
                 RigidBody::Dynamic,
                 LinearVelocity(velocity.truncate()),
                 Collider::rectangle(height, width),
+                get_collision_layers(PLAYER_PROJECTILE_COLLISION_LAYER),
             ));
         }
     }
@@ -281,7 +283,9 @@ pub fn player_killed_read(
             game_state.set(GameState::CharacterSelection);
             save_player_ghost_event.send(SavePlayerGhostEvent { class: *class });
         }
-        commands.entity(e.entity).despawn_recursive();
+        if let Some(e) = commands.get_entity(e.entity) {
+            e.despawn_recursive();
+        }
     }
 }
 

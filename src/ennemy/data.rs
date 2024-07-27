@@ -67,6 +67,7 @@ pub struct AlwaysAttack;
 
 #[derive(Bundle)]
 pub struct EnemyBundle {
+    name: Name,
     pub enemy: Ennemy,
     pub kind: EnnemyKind,
     pub team: Team,
@@ -74,6 +75,7 @@ pub struct EnemyBundle {
     pub mesh: ColorMesh2dBundle,
     pub rigid_body: RigidBody,
     pub collider: Collider,
+    pub collision_layers: CollisionLayers,
 }
 
 impl EnemyBundle {
@@ -84,6 +86,7 @@ impl EnemyBundle {
         materials: &mut ResMut<Assets<ColorMaterial>>,
     ) -> Self {
         Self {
+            name: Name::new("Enemy"),
             enemy: Ennemy,
             kind,
             team: Team::Enemy,
@@ -96,19 +99,7 @@ impl EnemyBundle {
             },
             rigid_body: RigidBody::Static,
             collider: Collider::circle(radius),
+            collision_layers: get_collision_layers(ENEMY_CHARACTER_COLLISION_LAYER),
         }
     }
 }
-// Ennemy,
-// StateScoped(GameState::Play),
-// kind,
-// Team::Enemy,
-// Targetable,
-// ColorMesh2dBundle {
-//     mesh: meshes.add(Circle::new(radius)).into(),
-//     material: materials.add(Color::linear_rgb(0.6, 0.2, 0.1)),
-//     transform: Transform::from_xyz(300.0, 100.0, 0.0),
-//     ..default()
-// },
-// RigidBody::Static,
-// Collider::circle(radius),

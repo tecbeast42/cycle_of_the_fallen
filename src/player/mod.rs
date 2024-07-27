@@ -14,6 +14,7 @@ pub mod prelude {
     pub use super::data::*;
     pub use super::events::*;
     pub use super::PlayerPlugin;
+    pub use crate::collision::*;
 }
 
 pub struct PlayerPlugin;

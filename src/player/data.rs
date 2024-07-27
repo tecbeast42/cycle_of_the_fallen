@@ -1,3 +1,4 @@
+use super::prelude::*;
 use avian2d::prelude::*;
 use bevy::prelude::*;
 
@@ -138,6 +139,7 @@ pub struct Animation {
 
 #[derive(Bundle, Debug)]
 pub struct PlayerBundle {
+    pub name: Name,
     pub class: Class,
     pub player_stats: PlayerStats,
     pub sprite_bundle: SpriteBundle,
@@ -148,6 +150,7 @@ pub struct PlayerBundle {
     pub player_type: PlayerType,
     pub team: Team,
     pub targetable: Targetable,
+    pub collision_layers: CollisionLayers,
 }
 
 impl PlayerBundle {
@@ -164,8 +167,10 @@ impl PlayerBundle {
         };
         let layout = TextureAtlasLayout::from_grid(UVec2::splat(256), 4, 1, None, None);
         let texture_atlas_layout = texture_atlas_layouts.add(layout);
+        let collision_layers = get_collision_layers(PLAYER_CHARACTER_COLLISION_LAYER);
 
         PlayerBundle {
+            name: Name::new("Player"),
             player_stats: PlayerStats::new(class),
             sprite_bundle: SpriteBundle {
                 texture,
@@ -187,6 +192,7 @@ impl PlayerBundle {
             player_type,
             team: Team::Player,
             targetable: Targetable,
+            collision_layers,
         }
     }
 }

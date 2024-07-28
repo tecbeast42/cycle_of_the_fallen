@@ -43,6 +43,7 @@ fn main() {
                     ..default()
                 }),
             PhysicsPlugins::default().with_length_unit(PLAYER_RADIUS),
+            PhysicsDebugPlugin::default(),
         ))
         .insert_gizmo_config(
             PhysicsGizmos {
